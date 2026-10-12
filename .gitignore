@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+.astro/
+.wrangler/
+.wrangler-dry-run/
+
+# Generated content snapshot (produced by scripts/build-content.mjs,
+# committed on purpose: it is the content the static build renders from)
+# -> see .gitattributes
+
+# Env
+.env
+.env.*
+!.env.example
+
+# Editor / OS
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*
+!.vscode/extensions.json
+
+# Logs
+*.log
+npm-debug.log*
+
+# Local Cloudflare state
+.dev.vars

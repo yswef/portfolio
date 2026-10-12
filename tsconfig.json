@@ -1,0 +1,30 @@
+{
+  "extends": "astro/tsconfigs/strict",
+  "compilerOptions": {
+    "types": ["@cloudflare/workers-types", "node"],
+    "moduleResolution": "bundler",
+    "module": "ESNext",
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM", "DOM.Iterable"],
+    "strict": true,
+    "noUncheckedIndexedAccess": false,
+    "verbatimModuleSyntax": true,
+    "allowJs": true,
+    "checkJs": false,
+    "skipLibCheck": true,
+    "resolveJsonModule": true,
+    "jsx": "preserve",
+    "jsxImportSource": "astro",
+    "baseUrl": "."
+  },
+  "include": [
+    ".astro/types.d.ts",
+    "src/**/*",
+    "functions/**/*",
+    "scripts/**/*",
+    "tests/**/*",
+    "*.mjs",
+    "*.ts"
+  ],
+  "exclude": ["dist", "node_modules", ".wrangler"]
+}

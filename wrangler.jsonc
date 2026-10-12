@@ -1,0 +1,33 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "portfolio",
+  "pages_build_output_dir": "./dist",
+  "compatibility_date": "2026-10-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "observability": {
+    "enabled": true
+  },
+  "vars": {
+    "SITE_URL": "https://portfolio.pages.dev",
+    "GITHUB_USERNAME": "yswef",
+    "SYNC_INTERVAL_MINUTES": "15"
+  },
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "portfolio-db",
+      "database_id": "00000000-0000-0000-0000-000000000000",
+      "migrations_dir": "migrations"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "DOCS",
+      "id": "0000000000000000000000000000000a"
+    }
+  ],
+  "analytics_engine_datasets": [],
+  "placement": {
+    "mode": "off"
+  }
+}
