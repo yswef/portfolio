@@ -13,7 +13,11 @@
   let codes = $state<string[]>([]);
   let error = $state('');
   let notice = $state('');
-  let enabled = $state(totpEnabled);
+  let enabled = $state(false);
+
+  $effect(() => {
+    enabled = totpEnabled;
+  });
 
   async function changePassword(event: SubmitEvent) {
     event.preventDefault();

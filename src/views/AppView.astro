@@ -1,4 +1,5 @@
 ---
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import StarButton from '../components/StarButton.svelte';
 import { buildDownloadLink, formatFileSize } from '../lib/download-link';
 import {
@@ -41,6 +42,7 @@ const pricingLabel =
 
 <section class="section">
   <div class="shell stack">
+    <Breadcrumbs locale={locale} items={[{ label: t('nav.apps', locale), href: localizedPath(locale, 'apps') }, { label: pick(app.name, locale) }]} />
     <nav class="small muted mono" aria-label="breadcrumb">
       <a href={localizedPath(locale, '')}>{t('nav.home', locale)}</a> /
       <a href={localizedPath(locale, 'apps')}>{t('nav.apps', locale)}</a> /

@@ -1,4 +1,6 @@
 ---
+import { localizedPath } from '../server/content';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import { pick, type ContentSnapshot, type Locale } from '../server/content';
 import { t } from '../i18n/ui';
 
@@ -15,6 +17,7 @@ void content;
 
 <section class="section">
   <div class="shell stack">
+    <Breadcrumbs locale={locale} items={[{ label: t('nav.pages', locale), href: localizedPath(locale, 'pages') }, { label: pick(page.title, locale) }]} />
     <nav class="small muted mono" aria-label="breadcrumb">
       <a href={locale === 'ar' ? '/' : '/en/'}>{t('nav.home', locale)}</a> /
       <a href={locale === 'ar' ? '/pages/' : '/en/pages/'}>{t('nav.pages', locale)}</a> /

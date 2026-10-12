@@ -15,7 +15,11 @@
   let password = $state('');
   let code = $state('');
   let busy = $state(false);
-  let error = $state(initialNotice);
+  let error = $state('');
+
+  $effect(() => {
+    if (initialNotice) error = initialNotice;
+  });
 
   async function submitPassword(event: SubmitEvent) {
     event.preventDefault();

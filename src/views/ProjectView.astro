@@ -1,4 +1,5 @@
 ---
+import Breadcrumbs from '../components/Breadcrumbs.astro';
 import SectionHeading from '../components/SectionHeading.astro';
 import DocsViewer from '../components/DocsViewer.astro';
 import StarButton from '../components/StarButton.svelte';
@@ -41,6 +42,7 @@ const facts: { label: string; value: string }[] = [
 
 <section class="section">
   <div class="shell stack">
+    <Breadcrumbs locale={locale} items={[{ label: t('nav.projects', locale), href: localizedPath(locale, 'projects') }, { label: pick(project.name, locale) }]} />
     <nav class="small muted mono" aria-label="breadcrumb">
       <a href={localizedPath(locale, '')}>{t('nav.home', locale)}</a> /
       <a href={localizedPath(locale, 'projects')}>{t('nav.projects', locale)}</a> /

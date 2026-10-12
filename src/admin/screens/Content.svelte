@@ -183,7 +183,7 @@
 
 <div class="adm-grid" role="tablist" aria-label="أنواع المحتوى" style="grid-template-columns:repeat(auto-fit,minmax(120px,1fr));margin-bottom:16px">
   {#each collections as c (c.id)}
-    <button class="adm-btn small" role="tab" aria-selected={name === c.id} aria-pressed={name === c.id} onclick={() => onPick(c.id)}>{c.label}</button>
+    <button class="adm-btn small" role="tab" aria-selected={name === c.id} onclick={() => onPick(c.id)}>{c.label}</button>
   {/each}
 </div>
 

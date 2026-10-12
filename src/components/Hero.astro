@@ -75,7 +75,7 @@ const stats = [
         )
       }
 
-      <div class="terminal" style="margin-block-start:0.75rem" aria-hidden="true">
+      <div class="terminal" style="margin-block-start:0.75rem" aria-hidden="true" data-depth="0.6">
         <div class="terminal__bar">
           <i></i><i></i><i></i>
           <span style="margin-inline-start:0.5rem">{prompt}</span>
@@ -129,3 +129,37 @@ const stats = [
     observer.observe(body);
   }
 </script>
+
+<script>
+  // Depth layers: elements marked with data-depth drift against the pointer at
+  // different distances, which gives the hero a sense of depth. Off for touch
+  // screens and for visitors who asked for reduced motion.
+  const reduce = document.documentElement.dataset.motion === 'reduced';
+  const fine = document.documentElement.dataset.pointer === 'fine';
+  const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-depth]'));
+
+  if (layers.length && fine && !reduce) {
+    let frame = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+
+    const paint = () => {
+      frame = 0;
+      for (const layer of layers) {
+        const depth = Number(layer.dataset.depth) || 0;
+        layer.style.transform = `translate3d(${(-pointerX * depth * 22).toFixed(2)}px, ${(-pointerY * depth * 14).toFixed(2)}px, 0)`;
+      }
+    };
+
+    window.addEventListener(
+      'pointermove',
+      (event) => {
+        pointerX = event.clientX / window.innerWidth - 0.5;
+        pointerY = event.clientY / window.innerHeight - 0.5;
+        if (!frame) frame = requestAnimationFrame(paint);
+      },
+      { passive: true },
+    );
+  }
+</script>
+
