@@ -53,7 +53,7 @@ const { content, locale, retentionDays } = Astro.props;
 
     <p class="hint">
       {locale === 'ar' ? 'لأي سؤال حول البيانات: ' : 'Questions about the data: '}
-      {content.profile.email ? <a href={`mailto:${content.profile.email}`}>{pick(content.profile.email, locale) || content.profile.email}</a> : <a href={localizedPath(locale, 'contact')}>{t('nav.contact', locale)}</a>}
+      {content.profile.email ? <a href={`mailto:${content.profile.email}`}>{content.profile.email}</a> : <a href={localizedPath(locale, 'contact')}>{t('nav.contact', locale)}</a>}
     </p>
   </div>
 </section>

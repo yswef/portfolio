@@ -18,7 +18,7 @@ interface Props {
   content: ContentSnapshot;
   locale: Locale;
   project: ContentSnapshot['projects'][number];
-  docsFiles: { path: string; title: string | null; isEntry: number }[];
+  docsFiles: { path: string; title: string | null; isEntry: boolean | number }[];
   oauthEnabled: boolean;
 }
 

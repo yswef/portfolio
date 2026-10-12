@@ -213,7 +213,7 @@ const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T0
 
       function send(type: 'pageview' | 'exit') {
         // The visitor's "do not track" choice wins over any measurement.
-        const dnt = navigator.doNotTrack || window.doNotTrack;
+        const dnt = navigator.doNotTrack;
         if (dnt === '1' || dnt === 'yes') return;
         if (!localStorage.getItem(KEY_VISITOR)) localStorage.setItem(KEY_VISITOR, id());
         if (!sessionStorage.getItem(KEY_SESSION)) sessionStorage.setItem(KEY_SESSION, id());
@@ -226,7 +226,7 @@ const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T0
         fetch('/api/track', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body,
+          body: JSON.stringify(body),
           keepalive: true,
           credentials: 'same-origin',
         }).catch(() => undefined);

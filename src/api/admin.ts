@@ -56,7 +56,8 @@ import { COLLECTIONS, MESSAGE_FIELDS, PAGE_FIELDS, PROJECT_FIELDS, SETTINGS_KEYS
 import { renderMarkdown } from '../server/markdown';
 import { buildSnapshot } from '../server/snapshot';
 import { publishSnapshot, recentSyncRuns, runSync } from '../server/sync';
-import { apiToRow, rowToApi, toColumn } from '../server/rows';
+import { apiToRow, rowToApi, rowsToApi, toColumn } from '../server/rows';
+import { extractArchive } from '../server/zip';
 import { validateRow, type Row } from '../server/validate';
 import { deletePage, getPage, pageFileList, replacePageFiles, createPage, type UploadFile } from '../server/pages';
 import { GitHubClient } from '../server/github';
@@ -507,7 +508,7 @@ export function createAdminRoutes() {
       .bind(...params)
       .all();
     void user;
-    return ok({ items: rows.results ?? [], collection: name, spec: publicSpec(spec) });
+    return ok({ items: rowsToApi((rows.results ?? []) as Record<string, unknown>[], spec), collection: name, spec: publicSpec(spec) });
   });
 
   admin.post('/collection/:name', async (c) => {
@@ -771,7 +772,17 @@ export function createAdminRoutes() {
     }>(c.req.raw)) ?? {};
 
     if (!body.title) return fail(400, 'missing_title');
-    const files = decodeUpload(body.files ?? []);
+    let files = decodeUpload(body.files ?? []);
+    if (body.source === 'zip') {
+      // A zip is unpacked here so folder structure and binary assets survive.
+      const archive = files.find((file) => file.path.toLowerCase().endsWith('.zip') && file.bytes);
+      if (!archive?.bytes) return fail(400, 'no_zip');
+      try {
+        files = await extractArchive(archive.bytes.buffer as ArrayBuffer);
+      } catch (zipError) {
+        return fail(400, zipError instanceof Error && zipError.message.startsWith('zip_') ? zipError.message : 'bad_zip');
+      }
+    }
     if (!files.length) return fail(400, 'no_files');
 
     try {

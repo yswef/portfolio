@@ -125,3 +125,28 @@ export async function extractTextFiles(
   }
   return out;
 }
+
+/** Limits for an uploaded archive: the zip is decoded inside one request. */
+export const ZIP_LIMITS = { maxEntries: 500, maxTotalBytes: 40 * 1024 * 1024 } as const;
+
+/**
+ * Unpacks every regular file of an archive, keeping folder structure, binary
+ * files included (images, fonts). Directories and anything beyond the limits
+ * are refused with an error code instead of being silently truncated.
+ */
+export async function extractArchive(buffer: ArrayBuffer): Promise<{ path: string; bytes: Uint8Array<ArrayBuffer> }[]> {
+  const archive = parseZip(buffer);
+  if (archive.entries.length > ZIP_LIMITS.maxEntries) throw new Error('zip_too_many_entries');
+  const declared = archive.entries.reduce((sum, entry) => sum + entry.size, 0);
+  if (declared > ZIP_LIMITS.maxTotalBytes) throw new Error('zip_too_large');
+
+  const out: { path: string; bytes: Uint8Array<ArrayBuffer> }[] = [];
+  for (const entry of archive.entries) {
+    if (entry.path.endsWith('/')) continue;
+    const bytes = await extractZipEntry(buffer, entry);
+    const copy = new Uint8Array(bytes.byteLength);
+    copy.set(bytes);
+    out.push({ path: entry.path, bytes: copy });
+  }
+  return out;
+}
