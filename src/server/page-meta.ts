@@ -35,11 +35,11 @@ function truncate(value: string, limit = 158): string {
 }
 
 function brandTitle(section: string, locale: Locale): string {
-  return `${section} — ${SUFFIX[locale]}`;
+  return `${section} · ${SUFFIX[locale]}`;
 }
 
-function ogFor(kind: RouteKind, path: string): string {
-  return ogImagePath({ kind, path } as never);
+function ogFor(locale: Locale, path: string): string {
+  return ogImagePath(locale, path);
 }
 
 export function sectionMeta(
@@ -48,7 +48,11 @@ export function sectionMeta(
   options: { kind: RouteKind; path: string; title?: string; description?: string; extraJsonLd?: Record<string, unknown>[] },
 ): PageMeta {
   const label = ROUTE_KIND_LABELS[options.kind][locale];
-  const title = options.title ?? (options.path ? brandTitle(label, locale) : `${pick(content.profile.name, locale)} — ${pick(content.profile.headline, locale)}`);
+  const title =
+    options.title ??
+    (options.path
+      ? brandTitle(label, locale)
+      : `${pick(content.profile.name, locale)} · ${pick(content.profile.headline, locale)}`);
   const description =
     options.description ??
     pick(content.seo.defaultDescription, locale) ??
@@ -95,7 +99,7 @@ export function sectionMeta(
   return {
     title,
     description: truncate(description),
-    ogImage: ogFor(options.kind, options.path),
+    ogImage: ogFor(locale, options.path),
     jsonLd,
     ogType: options.kind === 'post' ? 'article' : options.kind === 'home' ? 'profile' : 'website',
     robots: 'index, follow',
@@ -113,10 +117,10 @@ export function projectMeta(
   return {
     title: `${name} — ${pick(content.profile.name, locale)}`,
     description: truncate(description),
-    ogImage: ogFor('project', `projects/${project.slug}`),
+    ogImage: ogFor(locale, `projects/${project.slug}`),
     jsonLd: [
       personJsonLd(content, locale),
-      softwarSourceWithProject(content, project, locale),
+      softwareSourceCodeJsonLd(content, project, locale),
       breadcrumbJsonLd(
         content,
         [
@@ -133,21 +137,12 @@ export function projectMeta(
   };
 }
 
-function softwarSourceWithProject(
-  content: ContentSnapshot,
-  project: ContentSnapshot['projects'][number],
-  locale: Locale,
-): Record<string, unknown> {
-  const base = softwareSourceCodeJsonLd(content, project, locale);
-  return { ...base, "@type": "SoftwareSourceCode" };
-}
-
 export function appMeta(content: ContentSnapshot, locale: Locale, app: ContentSnapshot['apps'][number]): PageMeta {
   const name = pick(app.name, locale);
   return {
     title: `${name} — ${pick(content.profile.name, locale)}`,
     description: truncate(pick(app.tagline, locale) || pick(content.seo.defaultDescription, locale)),
-    ogImage: ogFor('app', `apps/${app.slug}`),
+    ogImage: ogFor(locale, `apps/${app.slug}`),
     jsonLd: [
       personJsonLd(content, locale),
       softwareApplicationJsonLd(content, app, locale),
@@ -172,7 +167,7 @@ export function postMeta(content: ContentSnapshot, locale: Locale, post: Content
   return {
     title: `${title} — ${pick(content.profile.name, locale)}`,
     description: truncate(pick(post.excerpt, locale) || title),
-    ogImage: post.coverUrl && /^https?:/.test(post.coverUrl) ? post.coverUrl : ogFor('post', `blog/${post.slug}`),
+    ogImage: post.coverUrl && /^https?:/.test(post.coverUrl) ? post.coverUrl : ogFor(locale, `blog/${post.slug}`),
     jsonLd: [
       personJsonLd(content, locale),
       articleJsonLd(content, post, locale),
@@ -197,7 +192,7 @@ export function pageMeta(content: ContentSnapshot, locale: Locale, page: Content
   return {
     title: `${title} — ${pick(content.profile.name, locale)}`,
     description: truncate(pick(page.summary, locale) || title),
-    ogImage: ogFor('page', `pages/${page.slug}`),
+    ogImage: ogFor(locale, `pages/${page.slug}`),
     jsonLd: [
       personJsonLd(content, locale),
       breadcrumbJsonLd(
@@ -220,7 +215,7 @@ export function notFoundMeta(content: ContentSnapshot, locale: Locale): PageMeta
   return {
     title: brandTitle('404', locale),
     description: '',
-    ogImage: ogFor('home', ''),
+    ogImage: ogFor(locale, ''),
     jsonLd: [websiteJsonLd(content, locale)],
     ogType: 'website',
     robots: 'noindex, follow',

@@ -14,6 +14,7 @@ import {
   type ContentSnapshot,
   type Locale,
 } from '../server/content';
+import { ogImagePath } from '../server/routes';
 import { DIRECTION, HTML_LANG, t } from '../i18n/ui';
 
 interface Props {
@@ -21,6 +22,11 @@ interface Props {
   locale: Locale;
   /** Route path without the language prefix, e.g. `projects/my-tool`. */
   path: string;
+  /**
+   * Path used by the language switch and the hreflang alternates. Defaults to
+   * `path`; the 404 page points both languages at the home page instead.
+   */
+  alternatePath?: string;
   title: string;
   description?: string;
   ogImage?: string;
@@ -38,6 +44,7 @@ const {
   content,
   locale,
   path,
+  alternatePath,
   title,
   description,
   ogImage,
@@ -51,15 +58,16 @@ const {
 } = Astro.props;
 
 const dir = DIRECTION[locale];
-const arPath = localizedPath('ar', path);
-const enPath = localizedPath('en', path);
+const altPath = alternatePath ?? path;
+const arPath = localizedPath('ar', altPath);
+const enPath = localizedPath('en', altPath);
 const canonical = absoluteUrl(content, locale === 'ar' ? arPath : enPath);
 const siteOrigin = absoluteUrl(content, '/');
 const metaDescription =
   (description ?? '').trim() ||
   (locale === 'ar' ? content.seo.defaultDescription.ar : content.seo.defaultDescription.en) ||
   (locale === 'ar' ? content.profile.headline.ar : content.profile.headline.en);
-const image = absoluteUrl(content, ogImage ?? content.seo.ogImage ?? '/og/home.png');
+const image = absoluteUrl(content, ogImage ?? content.seo.ogImage ?? ogImagePath(locale, ''));
 const siteName = locale === 'ar' ? content.profile.name.ar : content.profile.name.en;
 const allKeywords = [...keywords, ...(content.seo.keywords ?? [])].filter(Boolean).slice(0, 20);
 const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T00:00:00.000Z' ? content.generatedAt : null;
@@ -102,6 +110,7 @@ const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T0
     <meta name="twitter:description" content={metaDescription} />
     <meta name="twitter:image" content={image} />
     {content.seo.twitterHandle && <meta name="twitter:site" content={content.seo.twitterHandle} />}
+    {content.seo.twitterHandle && <meta name="twitter:creator" content={content.seo.twitterHandle} />}
 
     {content.seo.googleVerification && <meta name="google-site-verification" content={content.seo.googleVerification} />}
     {content.seo.bingVerification && <meta name="msvalidate.01" content={content.seo.bingVerification} />}
@@ -146,7 +155,7 @@ const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T0
     <a class="skip" href="#main">{t('a11y.skipToContent', locale)}</a>
     <SceneBackground />
     <CursorLayer locale={locale} />
-    <SiteHeader content={content} locale={locale} currentPath={path} />
+    <SiteHeader content={content} locale={locale} currentPath={path} altPath={altPath} />
 
     <main id="main">
       <slot />
@@ -156,7 +165,8 @@ const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T0
 
     <script>
       // First-party analytics: one beacon when the page appears, one when it is
-      // left, carrying the time spent on it.
+      // left, carrying the time spent on it. Nothing is sent if the browser
+      // reports "do not track".
       const LOCALE = document.documentElement.dataset.locale === 'en' ? 'en' : 'ar';
       const KEY_VISITOR = 'pf.vid';
       const KEY_SESSION = 'pf.sid';
@@ -202,6 +212,9 @@ const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T0
       }
 
       function send(type: 'pageview' | 'exit') {
+        // The visitor's "do not track" choice wins over any measurement.
+        const dnt = navigator.doNotTrack || window.doNotTrack;
+        if (dnt === '1' || dnt === 'yes') return;
         if (!localStorage.getItem(KEY_VISITOR)) localStorage.setItem(KEY_VISITOR, id());
         if (!sessionStorage.getItem(KEY_SESSION)) sessionStorage.setItem(KEY_SESSION, id());
         const body = payload(type);

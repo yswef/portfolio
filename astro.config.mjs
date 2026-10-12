@@ -48,5 +48,12 @@ export default defineConfig({
       // Three.js is imported lazily in its own chunk; keep the rest lean.
       chunkSizeWarningLimit: 900,
     },
+    server: {
+      // The dev server is bound to every interface so it can be opened from a
+      // phone on the same network or through a tunnel. Production is served by
+      // Cloudflare, which does its own host checking.
+      host: true,
+      allowedHosts: true,
+    },
   },
 });

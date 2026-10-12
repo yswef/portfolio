@@ -203,9 +203,15 @@ export function routeUrls(content: ContentSnapshot, entry: RouteEntry): RouteUrl
   return { ar, en, canonical: absoluteUrl(content, ar), entry };
 }
 
-/** Where the pre-generated social card for a route lives. */
-export function ogImagePath(entry: RouteEntry): string {
-  return `/og/${entry.kind}-${entry.path ? entry.path.replace(/\//g, '-') : 'home'}.png`;
+/**
+ * Where the pre-generated social card for a route lives.
+ *
+ * One card per language, because the Arabic card is laid out right to left with
+ * Arabic text: sharing the Arabic page must not produce a Latin preview.
+ */
+export function ogImagePath(locale: Locale, path: string): string {
+  const slug = path ? path.replace(/\/$/, '') : 'home';
+  return `/og/${locale}/${slug}.png`;
 }
 
 export const ROUTE_KIND_LABELS: Record<RouteKind, { ar: string; en: string }> = {

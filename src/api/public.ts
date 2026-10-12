@@ -11,11 +11,11 @@
  * - `POST /api/sync`           secret-protected sync (scheduled workflow)
  */
 import { Hono } from 'hono';
-import { audit, isAdminPath, readSession } from '../server/auth';
-import { signPayload, verifyPayload, generateRecoveryCodes } from '../server/crypto';
-import { adminPath, siteUrl, type Env } from '../server/env';
+import { readSession } from '../server/auth';
+import { signPayload, verifyPayload } from '../server/crypto';
+import { siteUrl, type Env } from '../server/env';
 import { enforceRateLimit, fail, json, ok, readJson, requestMeta } from '../server/http';
-import { ipDigest, track, visitorIdFor, type TrackPayload } from '../server/analytics';
+import { ipDigest, track, type TrackPayload } from '../server/analytics';
 import { recordDownload, resolveDownload, downloadHeaders } from '../server/downloads';
 import { contentTypeFor } from '../server/docs';
 import { getPage, servePageFile } from '../server/pages';
@@ -424,5 +424,3 @@ function safeJson(text: string): unknown {
     return null;
   }
 }
-
-export const PUBLIC_HELPERS = { generateRecoveryCodes, visitorIdFor, adminPath, audit, isAdminPath };

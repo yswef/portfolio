@@ -9,10 +9,12 @@ import { t } from '../i18n/ui';
 interface Props {
   content: ContentSnapshot;
   locale: Locale;
+  /** Path used by the language switch when it differs from the current page. */
+  altPath?: string;
   currentPath: string;
 }
 
-const { content, locale, currentPath } = Astro.props;
+const { content, locale, currentPath, altPath = currentPath } = Astro.props;
 
 const items = [
   { path: '', key: 'nav.home' as const },
@@ -59,10 +61,10 @@ const isActive = (path: string) => {
 
     <div class="header-tools">
       <div class="lang-switch" aria-label={locale === 'ar' ? 'تغيير اللغة' : 'Change language'}>
-        <a href={localizedPath('ar', currentPath)} aria-current={locale === 'ar' ? 'true' : undefined} hreflang="ar" lang="ar">
+        <a href={localizedPath('ar', altPath)} aria-current={locale === 'ar' ? 'true' : undefined} hreflang="ar" lang="ar">
           AR
         </a>
-        <a href={localizedPath('en', currentPath)} aria-current={locale === 'en' ? 'true' : undefined} hreflang="en" lang="en">
+        <a href={localizedPath('en', altPath)} aria-current={locale === 'en' ? 'true' : undefined} hreflang="en" lang="en">
           EN
         </a>
       </div>
