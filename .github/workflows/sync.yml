@@ -1,0 +1,36 @@
+# Runs the GitHub sync every 15 minutes (GitHub's shortest scheduled interval).
+# Needs two GitHub repository settings:
+#   - Variable  SITE_URL     : the public address, for example https://example.pages.dev
+#   - Secret    SYNC_SECRET  : the same value stored as a Cloudflare secret
+name: sync-portfolio
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: sync-portfolio
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Trigger sync
+        env:
+          SITE_URL: ${{ vars.SITE_URL }}
+          SYNC_SECRET: ${{ secrets.SYNC_SECRET }}
+        run: |
+          if [ -z "$SITE_URL" ] || [ -z "$SYNC_SECRET" ]; then
+            echo "SITE_URL variable or SYNC_SECRET secret is missing."
+            exit 1
+          fi
+          curl --fail-with-body -sS -X POST "${SITE_URL%/}/api/sync" \
+            -H "x-sync-secret: ${SYNC_SECRET}" \
+            -H "content-type: application/json" \
+            -d '{}'

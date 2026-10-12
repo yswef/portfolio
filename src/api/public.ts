@@ -28,7 +28,7 @@ const COOKIE_VISITOR = '__Host-visitor';
 export function createPublicRoutes() {
   const api = new Hono<{ Bindings: Env }>();
 
-  api.get('/health', async (c) => {
+  api.get('/api/health', async (c) => {
     const env = c.env as Env;
     let db = false;
     try {
@@ -46,7 +46,7 @@ export function createPublicRoutes() {
 
   /* ------------------------------------------------------------------ track */
 
-  api.post('/track', async (c) => {
+  api.post('/api/track', async (c) => {
     const env = c.env as Env;
     const meta = requestMeta(c.req.raw);
     const limit = await enforceRateLimit(env.DB, {
@@ -81,7 +81,7 @@ export function createPublicRoutes() {
 
   /* ---------------------------------------------------------------- contact */
 
-  api.post('/contact', async (c) => {
+  api.post('/api/contact', async (c) => {
     const env = c.env as Env;
     const meta = requestMeta(c.req.raw);
     const limit = await enforceRateLimit(env.DB, {
@@ -168,7 +168,7 @@ export function createPublicRoutes() {
 
   /* ------------------------------------------------------- repository docs */
 
-  api.get('/docs/:owner/:repo/*', async (c) => {
+  api.get('/api/docs/:owner/:repo/*', async (c) => {
     const env = c.env as Env;
     const owner = c.req.param('owner')!;
     const repo = c.req.param('repo')!;
@@ -257,7 +257,7 @@ export function createPublicRoutes() {
    * OAuth flow. Without OAuth configured the endpoint reports that the feature
    * is off and the site falls back to opening the repository page.
    */
-  api.get('/star/oauth/start', async (c) => {
+  api.get('/api/star/oauth/start', async (c) => {
     const env = c.env as Env;
     if (!env.GITHUB_OAUTH_CLIENT_ID || !env.GITHUB_OAUTH_CLIENT_SECRET) return fail(501, 'not_configured');
     const repoFullName = c.req.query('repo') ?? '';
@@ -275,7 +275,7 @@ export function createPublicRoutes() {
     return Response.redirect(redirect.toString(), 302);
   });
 
-  api.get('/star/oauth/callback', async (c) => {
+  api.get('/api/star/oauth/callback', async (c) => {
     const env = c.env as Env;
     const code = c.req.query('code');
     const state = c.req.query('state');
@@ -302,7 +302,7 @@ export function createPublicRoutes() {
     return json({ ok: true, repo: payload.repo, token: tokenData.access_token });
   });
 
-  api.post('/star', async (c) => {
+  api.post('/api/star', async (c) => {
     const env = c.env as Env;
     const meta = requestMeta(c.req.raw);
     const limit = await enforceRateLimit(env.DB, { key: `star:${meta.ip ?? 'unknown'}`, limit: 20, windowSeconds: 3600 });
@@ -330,7 +330,7 @@ export function createPublicRoutes() {
     return fail(502, 'github_error', { status: response.status });
   });
 
-  api.get('/star/count/:owner/:repo', async (c) => {
+  api.get('/api/star/count/:owner/:repo', async (c) => {
     const env = c.env as Env;
     const fullName = `${c.req.param('owner')}/${c.req.param('repo')}`;
     const row = await env.DB.prepare('SELECT stars FROM projects WHERE lower(full_name) = ?')
@@ -341,7 +341,7 @@ export function createPublicRoutes() {
 
   /* -------------------------------------------------------------- webhooks */
 
-  api.post('/webhook/github', async (c) => {
+  api.post('/api/webhook/github', async (c) => {
     const env = c.env as Env;
     if (!env.GITHUB_WEBHOOK_SECRET) return fail(501, 'webhook_secret_missing');
     const body = await c.req.text();
@@ -372,14 +372,13 @@ export function createPublicRoutes() {
 
   /* ------------------------------------------------------------------- sync */
 
-  api.post('/sync', async (c) => {
+  api.post('/api/sync', async (c) => {
     const env = c.env as Env;
     if (!env.SYNC_SECRET) return fail(501, 'sync_secret_missing');
 
     const provided =
       c.req.header('x-sync-secret') ??
       (c.req.header('authorization')?.replace(/^Bearer\s+/i, '') ?? null) ??
-      c.req.query('secret') ??
       null;
     if (!provided || provided !== env.SYNC_SECRET) {
       const meta = requestMeta(c.req.raw);
@@ -401,9 +400,9 @@ export function createPublicRoutes() {
 
   /* -------------------------------------------------------- utility helpers */
 
-  api.get('/csp-report', async () => ok({ received: false }));
+  api.get('/api/csp-report', async () => ok({ received: false }));
 
-  api.post('/csp-report', async (c) => {
+  api.post('/api/csp-report', async (c) => {
     const env = c.env as Env;
     const meta = requestMeta(c.req.raw);
     const report = (await readJson<Record<string, unknown>>(c.req.raw)) ?? {};
