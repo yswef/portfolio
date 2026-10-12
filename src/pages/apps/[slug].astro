@@ -1,0 +1,36 @@
+---
+import Base from '../../layouts/Base.astro';
+import AppView from '../../views/AppView.astro';
+import { appBySlug, loadContent, visibleApps } from '../../server/content';
+import { appMeta } from '../../server/page-meta';
+import type { ContentSnapshot } from '../../server/content';
+
+export function getStaticPaths() {
+  const content = loadContent();
+  return visibleApps(content).map((app) => ({ params: { slug: app.slug }, props: { app } }));
+}
+
+interface Props {
+  app: ContentSnapshot['apps'][number];
+}
+
+const content = loadContent();
+const { app } = Astro.props;
+const meta = appMeta(content, 'ar', app);
+const project = app.projectSlug ? (content.projects.find((candidate) => candidate.slug === app.projectSlug) ?? null) : null;
+const oauthEnabled = import.meta.env.PUBLIC_OAUTH_STAR === '1';
+void appBySlug;
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path={`apps/${app.slug}`}
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  keywords={meta.keywords}
+>
+  <AppView content={content} locale="ar" app={app} project={project} oauthEnabled={oauthEnabled} />
+</Base>

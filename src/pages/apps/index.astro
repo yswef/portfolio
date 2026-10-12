@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import AppsView from '../../views/AppsView.astro';
+import { loadContent } from '../../server/content';
+import { sectionMeta } from '../../server/page-meta';
+
+const content = loadContent();
+const meta = sectionMeta(content, 'ar', { kind: 'apps', path: 'apps' });
+
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path="apps"
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType={meta.ogType}
+  keywords={meta.keywords}
+>
+  <AppsView content={content} locale="ar" />
+</Base>

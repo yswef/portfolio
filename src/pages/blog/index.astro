@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import BlogView from '../../views/BlogView.astro';
+import { loadContent } from '../../server/content';
+import { sectionMeta } from '../../server/page-meta';
+
+const content = loadContent();
+const meta = sectionMeta(content, 'ar', { kind: 'blog', path: 'blog' });
+
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path="blog"
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType={meta.ogType}
+  keywords={meta.keywords}
+>
+  <BlogView content={content} locale="ar" />
+</Base>

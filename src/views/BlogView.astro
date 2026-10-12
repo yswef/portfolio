@@ -1,0 +1,43 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import PostCard from '../components/PostCard.astro';
+import { pick, publishedPosts, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  tag?: string;
+}
+
+const { content, locale, tag } = Astro.props;
+const all = publishedPosts(content);
+const tags = [...new Set(all.flatMap((post) => post.tags))];
+const posts = tag ? all.filter((post) => post.tags.includes(tag)) : all;
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading eyebrow={t('nav.blog', locale)} title={t('section.blog', locale)} index="06" />
+
+    {tags.length > 1 && (
+      <nav class="tag-row" aria-label={t('label.tags', locale)}>
+        {tags.map((item) => (
+          <a class={`tag tag--plain ${item === tag ? 'tag--accent' : ''}`} href={`?tag=${encodeURIComponent(item)}`}>
+            {item}
+          </a>
+        ))}
+      </nav>
+    )}
+
+    {posts.length === 0 ? (
+      <p class="muted">{t('state.empty', locale)}</p>
+    ) : (
+      <div class="grid grid-auto">
+        {posts.map((post, index) => (
+          <PostCard post={post} locale={locale} index={String(index + 1).padStart(2, '0')} />
+        ))}
+      </div>
+    )}
+  </div>
+</section>

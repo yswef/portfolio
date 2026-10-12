@@ -1,0 +1,206 @@
+---
+import StarButton from '../components/StarButton.svelte';
+import { buildDownloadLink, formatFileSize } from '../lib/download-link';
+import {
+  formatDate,
+  formatNumber,
+  localizedPath,
+  pick,
+  type ContentSnapshot,
+  type Locale,
+} from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  app: ContentSnapshot['apps'][number];
+  project: ContentSnapshot['projects'][number] | null;
+  oauthEnabled: boolean;
+}
+
+const { content, locale, app, project, oauthEnabled } = Astro.props;
+const name = pick(app.name, locale);
+const tagline = pick(app.tagline, locale);
+const body = pick(app.bodyHtml, locale);
+const currentFiles = app.assets.filter((asset) => asset.isCurrent);
+const older = app.assets.filter((asset) => !asset.isCurrent);
+const primary = currentFiles.find((asset) => asset.kind === 'installer') ?? currentFiles[0] ?? null;
+const requirements = pick(app.requirements, locale);
+const installNotes = pick(app.installNotes, locale);
+const licenseNote = pick(app.licenseNote, locale);
+const features = app.features.filter((feature) => feature[locale] || feature.en);
+const totalDownloads = app.assets.reduce((sum, asset) => sum + asset.downloads, 0);
+void content;
+
+const pricingLabel =
+  app.pricing.mode === 'free'
+    ? t('label.free', locale)
+    : pick(app.pricing.label, locale) || t(app.pricing.mode === 'donation' ? 'label.donation' : 'label.paid', locale);
+---
+
+<section class="section">
+  <div class="shell stack">
+    <nav class="small muted mono" aria-label="breadcrumb">
+      <a href={localizedPath(locale, '')}>{t('nav.home', locale)}</a> /
+      <a href={localizedPath(locale, 'apps')}>{t('nav.apps', locale)}</a> /
+      <span>{name}</span>
+    </nav>
+
+    <header class="stack-sm">
+      <div class="row">
+        <span class={`badge ${app.pricing.mode === 'free' ? 'badge--free' : 'badge--paid'}`}>{pricingLabel}</span>
+        {app.currentVersion && <span class="chip mono">v{String(app.currentVersion).replace(/^v/, '')}</span>}
+        <span class="chip mono">{app.platform}</span>
+      </div>
+      <h1>{name}</h1>
+      {tagline && <p class="lede">{tagline}</p>}
+    </header>
+
+    <div class="grid grid-two">
+      <div class="panel stack-sm">
+        <div class="panel-head">
+          <span>{t('label.files', locale)}</span>
+          <span class="mono">↓ {formatNumber(totalDownloads, locale)}</span>
+        </div>
+
+        {primary ? (
+          <a class="btn btn--primary" href={buildDownloadLink(app.slug, primary.id)}>
+            {t('action.download', locale)} — {primary.label[locale] || primary.label.en || primary.fileName}
+          </a>
+        ) : (
+          <p class="muted small">{t('label.noData', locale)}</p>
+        )}
+
+        {currentFiles.length > 0 && (
+          <div class="table-wrap">
+            <table class="data">
+              <thead>
+                <tr>
+                  <th>{t('label.files', locale)}</th>
+                  <th>{t('label.size', locale)}</th>
+                  <th>{t('action.downloads', locale)}</th>
+                  <th />
+                </tr>
+              </thead>
+              <tbody>
+                {currentFiles.map((asset) => (
+                  <tr>
+                    <td>
+                      <span class="mono">{asset.fileName}</span>
+                      <br />
+                      <span class="hint">{asset.label[locale] || asset.label.en || asset.kind}</span>
+                    </td>
+                    <td class="mono">{formatFileSize(asset.sizeBytes)}</td>
+                    <td class="mono">{formatNumber(asset.downloads, locale)}</td>
+                    <td>
+                      <a class="btn btn--sm" href={buildDownloadLink(app.slug, asset.id)}>
+                        {t('action.download', locale)}
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {app.pricing.mode !== 'free' && (
+          <div class="stack-sm" style="margin-block-start:0.5rem">
+            <span class="label">{t('label.pricing', locale)}</span>
+            <p class="small">{pick(app.pricing.details, locale)}</p>
+            {app.pricing.paymentUrl && (
+              <a class="btn" href={app.pricing.paymentUrl} target="_blank" rel="noopener">
+                {locale === 'ar' ? 'الدفع' : 'Pay'} — {app.pricing.paymentMethod || ''}
+              </a>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div class="stack">
+        {requirements && (
+          <div class="panel panel--tight stack-sm">
+            <span class="label">{t('label.requirements', locale)}</span>
+            <p class="small muted" style="white-space:pre-line">{requirements}</p>
+          </div>
+        )}
+
+        {installNotes && (
+          <div class="panel panel--tight stack-sm">
+            <span class="label">{locale === 'ar' ? 'طريقة التثبيت' : 'Installation'}</span>
+            <p class="small muted" style="white-space:pre-line">{installNotes}</p>
+          </div>
+        )}
+
+        {features.length > 0 && (
+          <div class="panel panel--tight stack-sm">
+            <span class="label">{locale === 'ar' ? 'أهم الميزات' : 'Highlights'}</span>
+            <ul class="stack-sm" style="list-style:none; padding:0">
+              {features.map((feature) => (
+                <li class="row" style="gap:0.5rem; align-items:flex-start">
+                  <span class="mono" style="color:var(--mint)">▸</span>
+                  <span class="small">{feature[locale] || feature.en}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {app.repoFullName && (
+          <StarButton
+            repo={app.repoFullName}
+            stars={project?.stars ?? app.stars ?? null}
+            locale={locale}
+            oauthEnabled={oauthEnabled}
+            labels={{
+              star: t('action.star', locale),
+              starWithGithub: t('action.starWithGithub', locale),
+              openRepo: t('action.openRepo', locale),
+              consent: t('action.starConsent', locale),
+            }}
+          />
+        )}
+
+        {licenseNote && <p class="hint">{licenseNote}</p>}
+      </div>
+    </div>
+
+    {body && <article class="panel md" set:html={body} />}
+
+    {currentFiles.some((asset) => asset.checksumSha256) && (
+      <div class="panel panel--tight stack-sm">
+        <span class="label">{t('label.checksum', locale)}</span>
+        <ul class="mono small" style="list-style:none; padding:0; word-break:break-all">
+          {currentFiles
+            .filter((asset) => asset.checksumSha256)
+            .map((asset) => (
+              <li>
+                {asset.fileName}: {asset.checksumSha256}
+              </li>
+            ))}
+        </ul>
+      </div>
+    )}
+
+    {older.length > 0 && (
+      <details class="panel panel--tight">
+        <summary class="label" style="cursor:pointer">
+          {locale === 'ar' ? 'إصدارات سابقة' : 'Previous releases'} ({older.length})
+        </summary>
+        <ul class="stack-sm" style="list-style:none; padding:0; margin-block-start:0.75rem">
+          {older.slice(0, 12).map((asset) => (
+            <li class="row" style="justify-content:space-between">
+              <span class="mono small">
+                v{String(asset.releaseTag).replace(/^v/, '')} · {asset.fileName}
+              </span>
+              <a class="btn btn--sm btn--ghost" href={buildDownloadLink(app.slug, asset.id)}>
+                {t('action.download', locale)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </details>
+    )}
+  </div>
+</section>

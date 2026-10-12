@@ -1,0 +1,61 @@
+---
+/**
+ * The interactive object on the home page: a wireframe core with orbiting
+ * nodes. It follows the pointer, reacts to a click, pauses when scrolled out of
+ * view, and falls back to a CSS diamond when WebGL is not available.
+ */
+interface Props {
+  label?: string;
+}
+
+const { label = '' } = Astro.props;
+---
+
+<div class="hero__scene" data-hero-scene>
+  <canvas class="hero-canvas" data-hero-canvas aria-hidden="true"></canvas>
+  <div class="hero-fallback" data-hero-fallback hidden>
+    <span aria-hidden="true"></span>
+  </div>
+</div>
+{label && <p class="hint mono" style="text-align:center">{label}</p>}
+
+<script>
+  const host = document.querySelector<HTMLElement>('[data-hero-scene]');
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-hero-canvas]');
+  const fallback = document.querySelector<HTMLElement>('[data-hero-fallback]');
+
+  if (host && canvas && fallback) {
+    const showFallback = () => {
+      canvas.hidden = true;
+      fallback.hidden = false;
+    };
+
+    const start = async () => {
+      if (window.matchMedia('(max-width: 700px)').matches) {
+        showFallback();
+        return;
+      }
+      const module = await import('../lib/three-scene');
+      if (!module.webglAvailable() || !module.motionAllowed()) {
+        showFallback();
+        return;
+      }
+      try {
+        const scene = module.createHeroScene(canvas);
+        // Pause rendering while the object is off screen.
+        const observer = new IntersectionObserver(
+          ([entry]) => scene.setActive(Boolean(entry?.isIntersecting)),
+          { threshold: 0.05 },
+        );
+        observer.observe(host);
+      } catch {
+        showFallback();
+      }
+    };
+
+    const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => setTimeout(() => callback({} as IdleDeadline), 200));
+    idle(() => {
+      void start();
+    });
+  }
+</script>

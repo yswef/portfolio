@@ -1,0 +1,46 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import SocialOrbs from '../components/SocialOrbs.astro';
+import { localizedPath, pick, visibleSocials, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const socials = visibleSocials(content);
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading
+      eyebrow={t('nav.social', locale)}
+      title={t('section.social', locale)}
+      note={locale === 'ar' ? 'كل الروابط تُدار من لوحة التحكم.' : 'Every link is managed from the control panel.'}
+      index="09"
+    />
+
+    {socials.length === 0 ? (
+      <p class="muted">{t('state.empty', locale)}</p>
+    ) : (
+      <SocialOrbs content={content} locale={locale} />
+    )}
+
+    <div class="row">
+      <a class="btn btn--primary" href={localizedPath(locale, 'contact')}>
+        {t('label.workRequest', locale)}
+      </a>
+      {content.profile.email && (
+        <a class="btn btn--ghost" href={`mailto:${content.profile.email}`}>
+          {content.profile.email}
+        </a>
+      )}
+    </div>
+
+    {pick(content.profile.availability, locale) && (
+      <p class="hint">{pick(content.profile.availability, locale)}</p>
+    )}
+  </div>
+</section>

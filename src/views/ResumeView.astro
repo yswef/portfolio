@@ -1,0 +1,163 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import { categoryLabel, formatDate, pick, skillsByCategory, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const profile = content.profile;
+const skills = [...skillsByCategory(content).entries()];
+const education = content.credentials.filter((credential) => credential.kind === 'education');
+const certificates = content.credentials.filter((credential) => credential.kind !== 'education');
+const printLabel = locale === 'ar' ? 'طباعة / حفظ PDF' : 'Print / save PDF';
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading
+      eyebrow={t('nav.resume', locale)}
+      title={pick(profile.name, locale)}
+      note={pick(profile.availability, locale)}
+      index="04"
+    />
+
+    <div class="row" style="justify-content:space-between">
+      <p class="lede" style="max-inline-size:60ch">{pick(profile.summary, locale)}</p>
+      <button class="btn btn--ghost btn--sm" type="button" data-print>{printLabel}</button>
+    </div>
+
+    <div class="grid grid-two">
+      <div class="panel stack-sm">
+        <div class="panel-head"><span>{t('section.facts', locale)}</span><span class="mono">profile</span></div>
+        <dl class="stack-sm" style="margin:0">
+          <div class="row" style="justify-content:space-between">
+            <dt class="hint mono">Experience</dt>
+            <dd class="mono" style="margin:0">{profile.yearsExperience ? `${profile.yearsExperience} ${locale === 'ar' ? 'سنوات' : 'years'}` : '—'}</dd>
+          </div>
+          <div class="row" style="justify-content:space-between">
+            <dt class="hint mono">Self taught</dt>
+            <dd class="mono" style="margin:0">{profile.selfTaught ? (locale === 'ar' ? 'نعم' : 'Yes') : '—'}</dd>
+          </div>
+          {(profile.city[locale] || profile.country) && (
+            <div class="row" style="justify-content:space-between">
+              <dt class="hint mono">{t('label.country', locale)}</dt>
+              <dd class="mono" style="margin:0">{[profile.city[locale], profile.country].filter(Boolean).join(' · ')}</dd>
+            </div>
+          )}
+          {profile.languages[locale] && (
+            <div class="row" style="justify-content:space-between">
+              <dt class="hint mono">Languages</dt>
+              <dd class="mono" style="margin:0">{profile.languages[locale]}</dd>
+            </div>
+          )}
+          <div class="row" style="justify-content:space-between">
+            <dt class="hint mono">GitHub</dt>
+            <dd class="mono" style="margin:0">
+              <a href={`https://github.com/${profile.githubUsername}`} target="_blank" rel="noopener">@{profile.githubUsername}</a>
+            </dd>
+          </div>
+        </dl>
+      </div>
+
+      <div class="panel stack-sm">
+        <div class="panel-head"><span>{t('section.skills', locale)}</span><span class="mono">focus</span></div>
+        <div class="stack-sm">
+          {skills.map(([category, items]) => (
+            <div class="stack-sm">
+              <span class="label">{categoryLabel(category, locale)}</span>
+              <div class="stack-sm">
+                {items.map((skill) => (
+                  <div class="stack-sm">
+                    <div class="row" style="justify-content:space-between">
+                      <span class="small">{pick(skill.name, locale)}</span>
+                      {skill.level > 0 && <span class="mono small muted">{skill.level}%</span>}
+                    </div>
+                    {skill.level > 0 && (
+                      <div class="meter" style={`--value:${skill.level}`}>
+                        <span />
+                      </div>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+
+    {content.experience.length > 0 && (
+      <div class="stack">
+        <h2>{t('section.experience', locale)}</h2>
+        <ol class="stack" style="list-style:none; padding:0">
+          {content.experience.map((entry) => (
+            <li class="panel stack-sm" data-tilt>
+              <div class="row" style="justify-content:space-between; align-items:flex-start">
+                <div>
+                  <strong>{pick(entry.role, locale)}</strong>
+                  {pick(entry.organization, locale) && <span class="muted"> — {pick(entry.organization, locale)}</span>}
+                </div>
+                <span class="mono small muted">
+                  {entry.startDate || ''}
+                  {entry.endDate ? ` – ${entry.endDate}` : entry.isCurrent ? ` – ${locale === 'ar' ? 'حتى الآن' : 'present'}` : ''}
+                </span>
+              </div>
+              {pick(entry.summary, locale) && <p class="small muted">{pick(entry.summary, locale)}</p>}
+              {entry.highlights.length > 0 && (
+                <ul class="stack-sm" style="list-style:none; padding:0">
+                  {entry.highlights
+                    .filter((item) => item[locale] || item.en)
+                    .map((item) => (
+                      <li class="row" style="gap:0.5rem; align-items:flex-start">
+                        <span class="mono" style="color:var(--mint)">▸</span>
+                        <span class="small">{item[locale] || item.en}</span>
+                      </li>
+                    ))}
+                </ul>
+              )}
+              {pick(entry.location, locale) && <p class="hint mono">{pick(entry.location, locale)}</p>}
+            </li>
+          ))}
+        </ol>
+      </div>
+    )}
+
+    {content.credentials.length > 0 && (
+      <div class="stack">
+        <h2>{t('section.credentials', locale)}</h2>
+        <div class="grid grid-two">
+          {[...education, ...certificates].map((credential) => (
+            <article class="panel panel--tight stack-sm">
+              <div class="row" style="justify-content:space-between">
+                <span class={`badge ${credential.kind === 'education' ? '' : 'badge--free'}`}>
+                  {credential.kind === 'education' ? (locale === 'ar' ? 'تعليم' : 'Education') : locale === 'ar' ? 'شهادة' : 'Certificate'}
+                </span>
+                {credential.issuedYear && <span class="mono small muted">{credential.issuedYear}</span>}
+              </div>
+              <strong>{pick(credential.title, locale)}</strong>
+              {pick(credential.issuer, locale) && <span class="small muted">{pick(credential.issuer, locale)}</span>}
+              {pick(credential.note, locale) && <p class="hint">{pick(credential.note, locale)}</p>}
+              {credential.url && (
+                <a class="btn btn--sm btn--ghost" href={credential.url} target="_blank" rel="noopener">
+                  {locale === 'ar' ? 'الشهادة' : 'Certificate'}
+                </a>
+              )}
+            </article>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {content.generatedAt && content.generatedAt !== '1970-01-01T00:00:00.000Z' && (
+      <p class="hint mono">{t('footer.updated', locale)}: {formatDate(content.generatedAt, locale)}</p>
+    )}
+  </div>
+</section>
+
+<script>
+  document.querySelector('[data-print]')?.addEventListener('click', () => window.print());
+</script>

@@ -1,0 +1,59 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import { formatNumber, localizedPath, pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  retentionDays: number;
+}
+
+const { content, locale, retentionDays } = Astro.props;
+---
+
+<section class="section">
+  <div class="shell stack" style="max-inline-size:78ch">
+    <SectionHeading
+      eyebrow={t('footer.privacy', locale)}
+      title={locale === 'ar' ? 'الخصوصية والتحليلات' : 'Privacy and analytics'}
+      index="10"
+    />
+
+    <div class="stack">
+      <h2>{locale === 'ar' ? 'ما يُسجَّل' : 'What is recorded'}</h2>
+      <ul class="stack-sm" style="padding-inline-start:1.1rem">
+        <li>{locale === 'ar' ? 'الصفحة التي زُرتها ومدة البقاء عليها، ودرجة التمرير.' : 'The page you visited, how long you stayed and how far you scrolled.'}</li>
+        <li>{locale === 'ar' ? 'الدولة والمدينة كما توفرهما Cloudflare من الشبكة.' : 'Country and city as provided by Cloudflare from the network.'}</li>
+        <li>{locale === 'ar' ? 'نوع الجهاز والمتصفح ونظام التشغيل المستخلص من ترويسة المتصفح.' : 'Device, browser and operating system derived from the user-agent header.'}</li>
+        <li>{locale === 'ar' ? 'مصدر الزيارة (محرك بحث، شبكة اجتماعية، رابط، أو حملة UTM).' : 'Referrer (search engine, social network, link or UTM campaign).'}</li>
+      </ul>
+
+      <h2>{locale === 'ar' ? 'ما لا يُسجَّل' : 'What is never recorded'}</h2>
+      <ul class="stack-sm" style="padding-inline-start:1.1rem">
+        <li>{locale === 'ar' ? 'لا يُخزَّن عنوان IP خاماً. يُحوَّل إلى بصمة غير قابلة للعكس بملح يتغير كل يوم، فلا يمكن ربط زيارتين في يومين مختلفين.' : 'No raw IP address is stored. It is turned into a one-way digest with a salt that rotates daily, so visits on different days cannot be linked.'}</li>
+        <li>{locale === 'ar' ? 'لا كوكيز إعلانية، ولا أدوات تتبّع من أطراف ثالثة، ولا بيع بيانات.' : 'No advertising cookies, no third-party trackers, no data selling.'}</li>
+        <li>{locale === 'ar' ? `تُحذف البيانات التفصيلية بعد ${formatNumber(retentionDays, locale)} يوماً تلقائياً.` : `Detailed data is deleted automatically after ${retentionDays} days.`}</li>
+      </ul>
+
+      <h2>{locale === 'ar' ? 'المعرّف المجهول' : 'The anonymous identifier'}</h2>
+      <p>
+        {locale === 'ar'
+          ? 'يُستخدم رقم عشوائي يُخزَّن في متصفحك لتمييز جلسة الزيارة عن غيرها. يمكنك حذفه في أي وقت من إعدادات المتصفح، ولن يتأثر عمل الموقع.'
+          : 'A random value stored in your browser distinguishes one visit session from another. You can clear it from your browser settings at any time; the site keeps working.'}
+      </p>
+
+      <h2>{locale === 'ar' ? 'استبعاد الروبوتات' : 'Bot filtering'}</h2>
+      <p>
+        {locale === 'ar'
+          ? 'تُستبعد زيارات محركات البحث والأدوات الآلية من الإحصاءات، ولا تدخل في الأرقام المعروضة.'
+          : 'Crawler and automated traffic is excluded from the statistics and never appears in the numbers.'}
+      </p>
+    </div>
+
+    <p class="hint">
+      {locale === 'ar' ? 'لأي سؤال حول البيانات: ' : 'Questions about the data: '}
+      {content.profile.email ? <a href={`mailto:${content.profile.email}`}>{pick(content.profile.email, locale) || content.profile.email}</a> : <a href={localizedPath(locale, 'contact')}>{t('nav.contact', locale)}</a>}
+    </p>
+  </div>
+</section>

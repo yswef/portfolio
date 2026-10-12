@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import ContactView from '../../views/ContactView.astro';
+import { loadContent } from '../../server/content';
+import { sectionMeta } from '../../server/page-meta';
+
+const content = loadContent();
+const meta = sectionMeta(content, 'ar', { kind: 'contact', path: 'contact' });
+const turnstileSiteKey = import.meta.env.PUBLIC_TURNSTILE_SITE_KEY ?? '';
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path="contact"
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType={meta.ogType}
+  keywords={meta.keywords}
+>
+  <ContactView content={content} locale="ar" turnstileSiteKey={turnstileSiteKey} />
+</Base>

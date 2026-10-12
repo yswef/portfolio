@@ -1,0 +1,70 @@
+---
+import { formatDate, pick, publishedPosts, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  post: ContentSnapshot['posts'][number];
+}
+
+const { content, locale, post } = Astro.props;
+const title = pick(post.title, locale);
+const body = pick(post.bodyHtml, locale) || pick(post.bodyHtml, locale === 'ar' ? 'en' : 'ar');
+const others = publishedPosts(content)
+  .filter((candidate) => candidate.slug !== post.slug)
+  .slice(0, 3);
+---
+
+<article class="section">
+  <div class="shell stack" style="max-inline-size:820px">
+    <nav class="small muted mono" aria-label="breadcrumb">
+      <a href={locale === 'ar' ? '/' : '/en/'}>{t('nav.home', locale)}</a> /
+      <a href={locale === 'ar' ? '/blog/' : '/en/blog/'}>{t('nav.blog', locale)}</a> /
+      <span>{title}</span>
+    </nav>
+
+    <header class="stack-sm">
+      <h1>{title}</h1>
+      <div class="row">
+        {post.publishedAt && (
+          <span class="chip">
+            {t('label.publishedOn', locale)} <b>{formatDate(post.publishedAt, locale)}</b>
+          </span>
+        )}
+        <span class="chip">
+          <b>{post.readingMinutes}</b> {t('label.readingTime', locale)}
+        </span>
+      </div>
+      {post.tags.length > 0 && (
+        <ul class="tag-row">
+          {post.tags.map((tag) => (
+            <li class="tag">{tag}</li>
+          ))}
+        </ul>
+      )}
+    </header>
+
+    {post.coverUrl && (
+      <img src={post.coverUrl} alt={title} loading="lazy" style="border:1px solid var(--line); border-radius:4px" />
+    )}
+
+    <div class="md" set:html={body || `<p class="muted">${t('label.noData', locale)}</p>`} />
+
+    {others.length > 0 && (
+      <aside class="stack-sm">
+        <div class="rule"><span /></div>
+        <h2 style="font-size:var(--step-1)">{locale === 'ar' ? 'مقالات أخرى' : 'More articles'}</h2>
+        <ul class="stack-sm" style="list-style:none; padding:0">
+          {others.map((other) => (
+            <li>
+              <a href={`${locale === 'ar' ? '' : '/en'}/blog/${other.slug}/`}>
+                {pick(other.title, locale)}
+              </a>
+            </li>
+          ))}
+        </ul>
+      </aside>
+    )}
+  </div>
+</article>

@@ -1,0 +1,149 @@
+---
+/**
+ * Custom pointer: a small brass dot that tracks the cursor exactly and a ring
+ * that follows with easing, changes shape over text, and expands over anything
+ * clickable — optionally showing a short label taken from `data-cursor-label`.
+ *
+ * The same script drives the 3D tilt of `[data-tilt]` cards, because both are
+ * pointer effects and one observer is cheaper than two.
+ */
+import type { Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  locale: Locale;
+}
+
+const { locale } = Astro.props;
+---
+
+<div class="cursor-dot" data-cursor-dot aria-hidden="true"></div>
+<div class="cursor-ring" data-cursor-ring data-state="idle" aria-hidden="true">
+  <span class="cursor-label" data-cursor-label-text></span>
+</div>
+<p class="sr-only">{t('a11y.customCursorNote', locale)}</p>
+
+<script>
+  const root = document.documentElement;
+  const dot = document.querySelector<HTMLElement>('[data-cursor-dot]');
+  const ring = document.querySelector<HTMLElement>('[data-cursor-ring]');
+  const ringLabel = document.querySelector<HTMLElement>('[data-cursor-label-text]');
+
+  const fine = root.dataset.pointer === 'fine';
+  const motion = root.dataset.motion !== 'reduced';
+
+  if (dot && ring && fine && motion) {
+    root.dataset.cursor = 'on';
+
+    let pointerX = window.innerWidth / 2;
+    let pointerY = window.innerHeight / 2;
+    let ringX = pointerX;
+    let ringY = pointerY;
+    let visible = false;
+
+    const setVisible = (value: boolean) => {
+      visible = value;
+      const opacity = value ? '1' : '0';
+      dot.style.opacity = opacity;
+      ring.style.opacity = opacity;
+    };
+
+    window.addEventListener(
+      'pointermove',
+      (event) => {
+        pointerX = event.clientX;
+        pointerY = event.clientY;
+        if (!visible) setVisible(true);
+        dot.style.transform = `translate3d(${pointerX}px, ${pointerY}px, 0)`;
+      },
+      { passive: true },
+    );
+
+    window.addEventListener('pointerdown', () => ring.setAttribute('data-state', 'press'));
+    window.addEventListener('pointerup', () => ring.setAttribute('data-state', 'idle'));
+    document.addEventListener('pointerleave', () => setVisible(false));
+    setVisible(false);
+
+    const interactive = new Set(['A', 'BUTTON', 'INPUT', 'TEXTAREA', 'SELECT', 'SUMMARY', 'LABEL']);
+    const describe = (target: HTMLElement) => {
+      const label = target.closest<HTMLElement>('[data-cursor-label]')?.dataset.cursorLabel;
+      const isText = target.matches('input, textarea, [contenteditable]') && !interactive.has(target.tagName);
+      if (label) {
+        ring.setAttribute('data-state', 'action');
+        if (ringLabel) ringLabel.textContent = label;
+        return;
+      }
+      if (target.closest('a, button, [role="button"], [data-cursor]')) {
+        ring.setAttribute('data-state', 'action');
+        if (ringLabel) ringLabel.textContent = '';
+        return;
+      }
+      ring.setAttribute('data-state', isText ? 'text' : 'idle');
+      if (ringLabel) ringLabel.textContent = '';
+    };
+
+    window.addEventListener(
+      'pointerover',
+      (event) => {
+        const target = event.target as HTMLElement | null;
+        if (!target) return;
+        describe(target);
+      },
+      { passive: true },
+    );
+
+    const loop = () => {
+      ringX += (pointerX - ringX) * 0.18;
+      ringY += (pointerY - ringY) * 0.18;
+      ring.style.transform = `translate3d(${ringX}px, ${ringY}px, 0)`;
+      requestAnimationFrame(loop);
+    };
+    requestAnimationFrame(loop);
+  }
+
+  /* ------------------------------------------------------------- tilt */
+
+  const tiltTargets = Array.from(document.querySelectorAll<HTMLElement>('[data-tilt]'));
+  if (tiltTargets.length && fine && motion) {
+    const maxTilt = 7;
+    const reduce = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+    for (const card of tiltTargets) {
+      let frame = 0;
+      let queued = false;
+      let tiltX = 0;
+      let tiltY = 0;
+
+      const apply = () => {
+        queued = false;
+        card.style.setProperty('--tilt-x', `${tiltX.toFixed(2)}deg`);
+        card.style.setProperty('--tilt-y', `${tiltY.toFixed(2)}deg`);
+        card.style.setProperty('--lift', tiltX || tiltY ? '-4px' : '0px');
+      };
+
+      const onMove = (event: PointerEvent) => {
+        if (reduce.matches) return;
+        const rect = card.getBoundingClientRect();
+        const relativeX = (event.clientX - rect.left) / rect.width - 0.5;
+        const relativeY = (event.clientY - rect.top) / rect.height - 0.5;
+        tiltY = relativeX * maxTilt * 2;
+        tiltX = -relativeY * maxTilt;
+        if (!queued) {
+          queued = true;
+          frame = requestAnimationFrame(apply);
+        }
+      };
+
+      const reset = () => {
+        cancelAnimationFrame(frame);
+        tiltX = 0;
+        tiltY = 0;
+        apply();
+      };
+
+      card.addEventListener('pointermove', onMove, { passive: true });
+      card.addEventListener('pointerleave', reset);
+      card.addEventListener('blur', reset);
+    }
+  }
+</script>

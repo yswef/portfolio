@@ -1,0 +1,52 @@
+---
+import TiltCard from './TiltCard.astro';
+import { categoryLabel, formatRelative, localizedPath, pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  project: ContentSnapshot['projects'][number];
+  locale: Locale;
+  index?: string;
+}
+
+const { project, locale, index } = Astro.props;
+const name = pick(project.name, locale);
+const description = pick(project.description, locale) || project.readmeExcerpt;
+const topLanguages = project.languages.slice(0, 3);
+const label = t('action.viewProject', locale);
+---
+
+<TiltCard
+  href={localizedPath(locale, `projects/${project.slug}`)}
+  cursorLabel={label}
+  index={index}
+  class="item-card"
+>
+  <div class="row" style="justify-content:space-between; align-items:flex-start">
+    <span class="chip">
+      <b>{categoryLabel(project.category, locale)}</b>
+    </span>
+    {project.release && <span class="badge badge--free">v{String(project.release.tag).replace(/^v/, '')}</span>}
+  </div>
+
+  <h3>{name}</h3>
+  {description && <p class="small muted" style="line-clamp:3">{description}</p>}
+
+  {project.topics.length > 0 && (
+    <ul class="tag-row">
+      {project.topics.slice(0, 4).map((topic) => (
+        <li class="tag">{topic}</li>
+      ))}
+    </ul>
+  )}
+
+  <div class="item-card__meta">
+    <span class="chip">★ <b>{project.stars}</b> {t('label.stars', locale)}</span>
+    {project.language && <span class="chip">{project.language}</span>}
+    {project.pushedAt && <span class="chip">{t('label.updated', locale)}: <b>{formatRelative(project.pushedAt, locale)}</b></span>}
+  </div>
+
+  {topLanguages.length > 1 && (
+    <declarative-languages hidden>{topLanguages.map((language) => language.name).join(' · ')}</declarative-languages>
+  )}
+</TiltCard>

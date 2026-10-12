@@ -1,0 +1,62 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import { localizedPath, pick, visibleServices, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const services = visibleServices(content);
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading eyebrow={t('nav.services', locale)} title={t('section.services', locale)} index="03" />
+
+    {services.length === 0 && <p class="muted">{t('state.empty', locale)}</p>}
+
+    <div class="grid grid-two">
+      {services.map((service, index) => (
+        <article class="panel stack-sm" data-tilt id={service.slug}>
+          <div class="row" style="justify-content:space-between">
+            <span class="eyebrow">{String(index + 1).padStart(2, '0')}</span>
+            {service.priceNote[locale] && <span class="chip">{service.priceNote[locale]}</span>}
+          </div>
+          <h2 style="font-size:var(--step-2)">{pick(service.title, locale)}</h2>
+          <p class="muted">{pick(service.summary, locale)}</p>
+
+          {service.bodyHtml[locale] && <div class="md small" set:html={service.bodyHtml[locale]} />}
+
+          {service.deliverables.length > 0 && (
+            <ul class="stack-sm" style="list-style:none; padding:0">
+              {service.deliverables
+                .filter((item) => item[locale] || item.en)
+                .map((item) => (
+                  <li class="row" style="gap:0.5rem; align-items:flex-start">
+                    <span class="mono" style="color:var(--mint)">▸</span>
+                    <span class="small">{item[locale] || item.en}</span>
+                  </li>
+                ))}
+            </ul>
+          )}
+
+          {service.stack.length > 0 && (
+            <ul class="tag-row">
+              {service.stack.map((item) => (
+                <li class="tag">{item}</li>
+              ))}
+            </ul>
+          )}
+        </article>
+      ))}
+    </div>
+
+    <div class="row">
+      <a class="btn btn--primary" href={localizedPath(locale, 'contact')}>{t('label.workRequest', locale)}</a>
+      <a class="btn btn--ghost" href={localizedPath(locale, 'apps')}>{t('action.allApps', locale)}</a>
+    </div>
+  </div>
+</section>

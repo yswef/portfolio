@@ -1,0 +1,24 @@
+---
+import Base from '../../../layouts/Base.astro';
+import ResumeView from '../../../views/ResumeView.astro';
+import { loadContent } from '../../../server/content';
+import { sectionMeta } from '../../../server/page-meta';
+
+const content = loadContent();
+const meta = sectionMeta(content, 'en', { kind: 'resume', path: 'resume' });
+
+---
+
+<Base
+  content={content}
+  locale="en"
+  path="resume"
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType={meta.ogType}
+  keywords={meta.keywords}
+>
+  <ResumeView content={content} locale="en" />
+</Base>

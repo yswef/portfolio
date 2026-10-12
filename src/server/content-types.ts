@@ -121,6 +121,8 @@ export interface SnapshotProject {
   docsPath: string;
   docsEntry: string | null;
   docsFileCount: number;
+  /** HTML files mirrored into KV, used for the generated sidebar. */
+  docsFiles: { path: string; title: string | null; isEntry: boolean }[];
   readmeHtml: string;
   readmeExcerpt: string;
   hasDocs: boolean;

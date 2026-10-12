@@ -1,0 +1,33 @@
+---
+import Base from '../../layouts/Base.astro';
+import PageView from '../../views/PageView.astro';
+import { loadContent, publicPages } from '../../server/content';
+import { pageMeta } from '../../server/page-meta';
+import type { ContentSnapshot } from '../../server/content';
+
+export function getStaticPaths() {
+  const content = loadContent();
+  return publicPages(content).map((page) => ({ params: { slug: page.slug }, props: { page } }));
+}
+
+interface Props {
+  page: ContentSnapshot['pages'][number];
+}
+
+const content = loadContent();
+const { page } = Astro.props;
+const meta = pageMeta(content, 'ar', page);
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path={`pages/${page.slug}`}
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  keywords={meta.keywords}
+>
+  <PageView content={content} locale="ar" page={page} />
+</Base>

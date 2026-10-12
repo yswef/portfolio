@@ -1,0 +1,38 @@
+---
+/**
+ * Aggregated language usage across the repositories, computed by the sync.
+ * Percentages come from bytes reported by the GitHub languages API — the bars
+ * show relative weight, not a skill score.
+ */
+import { formatNumber, pick, type ContentSnapshot, type Locale } from '../server/content';
+
+interface Props {
+  languages: ContentSnapshot['languages'];
+  locale: Locale;
+}
+
+const { languages, locale } = Astro.props;
+const max = Math.max(1, ...languages.map((entry) => entry.percent));
+---
+
+<div class="lang-bars">
+  {
+    languages.map((entry) => (
+      <div class="lang-bar">
+        <span class="mono">{entry.name}</span>
+        <span class="lang-bar__track" role="img" aria-label={`${entry.name}: ${entry.percent}%`}>
+          <span class="lang-bar__fill" style={`inline-size:${((entry.percent / max) * 100).toFixed(1)}%`} />
+        </span>
+        <span class="mono muted">
+          {entry.percent}% · {entry.projects}
+        </span>
+      </div>
+    ))
+  }
+</div>
+<p class="hint" style="margin-block-start:0.75rem">
+  {locale === 'ar'
+    ? `المجموع محسوب من ${formatNumber(languages.reduce((sum, entry) => sum + entry.projects, 0), locale)} مشروعاً عاماً.`
+    : `Totals are computed from public repositories.`}
+  {pick({ ar: '', en: '' }, locale)}
+</p>

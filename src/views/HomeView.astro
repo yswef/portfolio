@@ -1,0 +1,225 @@
+---
+/** Home page composition. Sections disappear when their content is empty. */
+import Hero from '../components/Hero.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import AppCard from '../components/AppCard.astro';
+import PostCard from '../components/PostCard.astro';
+import LanguageBars from '../components/LanguageBars.astro';
+import SocialOrbs from '../components/SocialOrbs.astro';
+import {
+  categoryLabel,
+  featuredProjects,
+  localizedPath,
+  pick,
+  publishedPosts,
+  skillsByCategory,
+  visibleApps,
+  visibleServices,
+  visibleSocials,
+  type ContentSnapshot,
+  type Locale,
+} from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const projects = featuredProjects(content);
+const apps = visibleApps(content).slice(0, 3);
+const services = visibleServices(content);
+const posts = publishedPosts(content).slice(0, 3);
+const socials = visibleSocials(content);
+const skills = [...skillsByCategory(content).entries()];
+const learning = content.learning.slice(0, 4);
+---
+
+<Hero content={content} locale={locale} />
+
+{
+  projects.length > 0 && (
+    <section class="section" id="projects" aria-labelledby="projects-title">
+      <div class="shell">
+        <SectionHeading
+          eyebrow={t('nav.projects', locale)}
+          title={t('section.projects', locale)}
+          note={t('section.projectsNote', locale)}
+          index="01"
+          id="projects-title"
+        />
+        <div class="grid grid-auto">
+          {projects.map((project, index) => (
+            <ProjectCard project={project} locale={locale} index={String(index + 1).padStart(2, '0')} />
+          ))}
+        </div>
+        <p style="margin-block-start:1.25rem">
+          <a class="btn btn--ghost btn--sm" href={localizedPath(locale, 'projects')}>
+            {t('action.allProjects', locale)}
+          </a>
+        </p>
+      </div>
+    </section>
+  )
+}
+
+{
+  apps.length > 0 && (
+    <section class="section" id="apps" aria-labelledby="apps-title">
+      <div class="shell">
+        <SectionHeading
+          eyebrow={t('nav.apps', locale)}
+          title={t('section.apps', locale)}
+          note={t('section.appsNote', locale)}
+          index="02"
+          id="apps-title"
+        />
+        <div class="grid grid-auto">
+          {apps.map((app, index) => (
+            <AppCard app={app} locale={locale} index={String(index + 1).padStart(2, '0')} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  services.length > 0 && (
+    <section class="section" id="services" aria-labelledby="services-title">
+      <div class="shell">
+        <SectionHeading
+          eyebrow={t('nav.services', locale)}
+          title={t('section.services', locale)}
+          index="03"
+          id="services-title"
+        />
+        <div class="grid grid-two">
+          {services.map((service) => (
+            <article class="panel panel--tight stack-sm" data-tilt>
+              <h3 style="font-size:var(--step-1)">{pick(service.title, locale)}</h3>
+              <p class="small muted">{pick(service.summary, locale)}</p>
+              {service.stack.length > 0 && (
+                <ul class="tag-row">
+                  {service.stack.slice(0, 5).map((item) => (
+                    <li class="tag">{item}</li>
+                  ))}
+                </ul>
+              )}
+            </article>
+          ))}
+        </div>
+        <p style="margin-block-start:1.25rem">
+          <a class="btn btn--ghost btn--sm" href={localizedPath(locale, 'services')}>
+            {t('label.workRequest', locale)}
+          </a>
+        </p>
+      </div>
+    </section>
+  )
+}
+
+{
+  (skills.length > 0 || content.languages.length > 0) && (
+    <section class="section" id="skills" aria-labelledby="skills-title">
+      <div class="shell">
+        <SectionHeading
+          eyebrow={locale === 'ar' ? 'القدرات' : 'Capabilities'}
+          title={t('section.skills', locale)}
+          index="04"
+          id="skills-title"
+        />
+        <div class="grid grid-two">
+          <div class="stack-sm">
+            {skills.map(([category, items]) => (
+              <div class="stack-sm">
+                <span class="label">{categoryLabel(category, locale)}</span>
+                <ul class="tag-row">
+                  {items.map((skill) => (
+                    <li class={`tag ${skill.level >= 70 ? 'tag--accent' : ''}`}>
+                      {pick(skill.name, locale)}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+
+          {(content.languages.length > 0 || learning.length > 0) && (
+            <div class="stack">
+              {content.languages.length > 0 && (
+                <div class="panel stack-sm">
+                  <div class="panel-head">
+                    <span>{t('section.languages', locale)}</span>
+                    <span class="mono">GitHub</span>
+                  </div>
+                  <LanguageBars languages={content.languages} locale={locale} />
+                </div>
+              )}
+
+              {learning.length > 0 && (
+                <div class="panel stack-sm">
+                  <div class="panel-head">
+                    <span>{t('section.learning', locale)}</span>
+                    <a class="mono" href={localizedPath(locale, 'learning')}>
+                      {locale === 'ar' ? 'التفاصيل' : 'details'}
+                    </a>
+                  </div>
+                  {learning.map((item) => (
+                    <div class="stack-sm">
+                      <div class="row" style="justify-content:space-between">
+                        <strong>{pick(item.title, locale)}</strong>
+                        <span class="mono small muted">{item.progress}%</span>
+                      </div>
+                      <div class="meter meter--mint" style={`--value:${item.progress}`}>
+                        <span />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  posts.length > 0 && (
+    <section class="section" aria-labelledby="blog-title">
+      <div class="shell">
+        <SectionHeading
+          eyebrow={t('nav.blog', locale)}
+          title={t('section.blog', locale)}
+          index="05"
+          id="blog-title"
+        />
+        <div class="grid grid-auto">
+          {posts.map((post, index) => (
+            <PostCard post={post} locale={locale} index={String(index + 1).padStart(2, '0')} />
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+{
+  socials.length > 0 && (
+    <section class="section" aria-labelledby="social-title">
+      <div class="shell">
+        <SectionHeading
+          eyebrow={t('nav.social', locale)}
+          title={t('section.social', locale)}
+          index="06"
+          id="social-title"
+        />
+        <SocialOrbs content={content} locale={locale} limit={6} />
+      </div>
+    </section>
+  )
+}

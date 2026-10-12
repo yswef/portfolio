@@ -69,6 +69,16 @@ export async function buildSnapshot(env: Env, options: { username?: string } = {
       ORDER BY featured DESC, sort_order ASC, COALESCE(repo_pushed_at, '') DESC`,
   ).all<Row>();
 
+  const docRows = await env.DB.prepare(
+    "SELECT owner_key, path, title, is_entry, content_type FROM files WHERE scope = 'project-docs' AND content_type LIKE 'text/html%' ORDER BY owner_key ASC, path ASC",
+  ).all<Row>();
+  const docsByRepo = new Map<string, { path: string; title: string | null; isEntry: boolean }[]>();
+  for (const row of docRows.results ?? []) {
+    const list = docsByRepo.get(row.owner_key) ?? [];
+    list.push({ path: row.path, title: row.title ?? null, isEntry: Boolean(row.is_entry) });
+    docsByRepo.set(row.owner_key, list);
+  }
+
   const appRows = await env.DB.prepare('SELECT * FROM apps ORDER BY featured DESC, sort_order ASC, name ASC').all<Row>();
   const assetRows = await env.DB.prepare(
     'SELECT * FROM app_assets WHERE visible = 1 ORDER BY is_current DESC, release_published_at DESC, sort_order ASC',
@@ -127,6 +137,7 @@ export async function buildSnapshot(env: Env, options: { username?: string } = {
       docsPath: row.docs_path ?? 'docs',
       docsEntry: row.docs_entry ?? null,
       docsFileCount: asNumber(row.docs_file_count),
+      docsFiles: docsByRepo.get(String(row.full_name).toLowerCase()) ?? [],
       readmeHtml,
       readmeExcerpt: plainText(row.readme_markdown ?? row.description ?? '', 180),
       hasDocs: Boolean(row.has_docs),
