@@ -140,12 +140,12 @@ function deviceModelFrom(ua: string): string | null {
   return null;
 }
 
-export type ReferrerType = 'direct' | 'internal' | 'search' | 'social' | 'ai' | 'referral' | 'campaign';
+export type ReferrerType = 'direct' | 'internal' | 'search' | 'social' | 'chat' | 'referral' | 'campaign';
 
 const SEARCH_HOSTS = /(google|bing|duckduckgo|yahoo|yandex|baidu|ecosia|brave|qwant|startpage|naver|seznam)\./i;
 const SOCIAL_HOSTS =
   /(facebook|instagram|twitter|x\.com|t\.co|linkedin|telegram|whatsapp|reddit|pinterest|tiktok|snapchat|mastodon|youtube|discord|threads)\./i;
-const AI_HOSTS = /(chatgpt|openai|perplexity|claude|gemini|copilot|you\.com|phind|poe\.com)/i;
+const CHAT_HOSTS = /(chatgpt|openai|perplexity|claude|gemini|copilot|you\.com|phind|poe\.com)/i;
 
 export function classifyReferrer(
   referrer: string | null | undefined,
@@ -159,7 +159,7 @@ export function classifyReferrer(
   if (host === ownHost || host.endsWith(`.${ownHost}`)) return { type: 'internal', host };
   if (SEARCH_HOSTS.test(host)) return { type: 'search', host };
   if (SOCIAL_HOSTS.test(host)) return { type: 'social', host };
-  if (AI_HOSTS.test(host)) return { type: 'ai', host };
+  if (CHAT_HOSTS.test(host)) return { type: 'chat', host };
   return { type: 'referral', host };
 }
 
