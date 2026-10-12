@@ -12,12 +12,9 @@ import {
   loadContent,
   localizedPath,
   pick,
-  publicPages,
   publishedPosts,
   visibleApps,
   visibleProjects,
-  visibleSocials,
-  skillsByCategory,
 } from '../src/server/content';
 import { defaultSnapshot, SNAPSHOT_VERSION } from '../src/server/content-types';
 
@@ -79,23 +76,18 @@ describe('number and date formatting', () => {
 describe('selectors', () => {
   const content = loadContent();
 
-  it('never returns hidden entries to a public page', () => {
-    expect(visibleProjects(content).every((project) => !project.hidden)).toBe(true);
-    expect(visibleApps(content).every((app) => !app.hidden)).toBe(true);
-    expect(visibleSocials(content).every((social) => !social.hidden)).toBe(true);
+  it('only shows projects that are visible, active and not forks', () => {
+    const projects = visibleProjects(content);
+    expect(projects.every((project) => project.visible && project.syncState === 'active' && !project.isFork)).toBe(true);
   });
 
-  it('only lists published study pages and posts', () => {
-    expect(publicPages(content).every((page) => page.isPublic)).toBe(true);
-    expect(publishedPosts(content).every((post) => post.status === 'published')).toBe(true);
+  it('only shows apps that are visible', () => {
+    expect(visibleApps(content).every((app) => app.visible)).toBe(true);
   });
 
-  it('groups skills by category for the résumé sections', () => {
-    const groups = skillsByCategory(content);
-    for (const [category, skills] of groups) {
-      expect(category).toBeTruthy();
-      expect(skills.every((skill) => skill.category === category)).toBe(true);
-    }
+  it('orders posts newest first', () => {
+    const dates = publishedPosts(content).map((post) => post.publishedAt ?? '');
+    expect([...dates].sort().reverse()).toEqual(dates);
   });
 
   it('labels every known category in both languages', () => {
