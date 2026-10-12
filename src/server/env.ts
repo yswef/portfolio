@@ -28,6 +28,8 @@ export interface Env {
   SYNC_SECRET?: string;
   /** 32+ random bytes, base64. Signs session cookies and derives storage keys. */
   SESSION_SECRET?: string;
+  /** One-time token that allows creating the first administrator account. */
+  BOOTSTRAP_TOKEN?: string;
   /** Secret used to verify GitHub webhook deliveries. */
   GITHUB_WEBHOOK_SECRET?: string;
   /** Cloudflare Turnstile secret key for the contact form. */
