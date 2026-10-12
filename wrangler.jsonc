@@ -16,14 +16,14 @@
     {
       "binding": "DB",
       "database_name": "portfolio-db",
-      "database_id": "00000000-0000-0000-0000-000000000000",
+      "database_id": "ef3b9c7f-5e91-4701-87be-8ba526f06086",
       "migrations_dir": "migrations"
     }
   ],
   "kv_namespaces": [
     {
       "binding": "DOCS",
-      "id": "0000000000000000000000000000000a"
+      "id": "e246f0484dca4a58844b15be9446c179"
     }
   ],
   "analytics_engine_datasets": [],
