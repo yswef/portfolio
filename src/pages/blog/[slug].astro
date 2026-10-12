@@ -1,0 +1,36 @@
+---
+import Base from '../../layouts/Base.astro';
+import PostView from '../../views/PostView.astro';
+import { loadContent, publishedPosts } from '../../server/content';
+import { postMeta } from '../../server/page-meta';
+import type { ContentSnapshot } from '../../server/content';
+
+export function getStaticPaths() {
+  const content = loadContent();
+  return publishedPosts(content).map((post) => ({ params: { slug: post.slug }, props: { post } }));
+}
+
+interface Props {
+  post: ContentSnapshot['posts'][number];
+}
+
+const content = loadContent();
+const { post } = Astro.props;
+const meta = postMeta(content, 'ar', post);
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path={`blog/${post.slug}`}
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType="article"
+  keywords={meta.keywords}
+  publishedTime={post.publishedAt}
+  modifiedTime={post.updatedAt}
+>
+  <PostView content={content} locale="ar" post={post} />
+</Base>

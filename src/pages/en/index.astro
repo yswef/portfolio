@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import HomeView from '../../views/HomeView.astro';
+import { loadContent } from '../../server/content';
+import { sectionMeta } from '../../server/page-meta';
+
+const content = loadContent();
+const meta = sectionMeta(content, 'en', { kind: 'home', path: '' });
+
+---
+
+<Base
+  content={content}
+  locale="en"
+  path=""
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType={meta.ogType}
+  keywords={meta.keywords}
+>
+  <HomeView content={content} locale="en" />
+</Base>

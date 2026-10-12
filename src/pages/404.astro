@@ -1,0 +1,23 @@
+---
+import Base from '../layouts/Base.astro';
+import NotFoundView from '../views/NotFoundView.astro';
+import { loadContent } from '../server/content';
+import { notFoundMeta } from '../server/page-meta';
+
+const content = loadContent();
+const meta = notFoundMeta(content, 'ar');
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path="404"
+  alternatePath=""
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  noindex
+>
+  <NotFoundView content={content} locale="ar" />
+</Base>

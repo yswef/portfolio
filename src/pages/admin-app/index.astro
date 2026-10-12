@@ -1,0 +1,8 @@
+---
+import AdminLayout from '../../layouts/AdminLayout.astro';
+import AdminApp from '../../admin/App.svelte';
+---
+
+<AdminLayout title="لوحة التحكم">
+  <AdminApp client:only="svelte" />
+</AdminLayout>

@@ -1,0 +1,32 @@
+---
+/**
+ * Fixed WebGL backdrop. The canvas is inert markup until the browser proves it
+ * can handle it: WebGL support, enough viewport, fine pointer and no reduced
+ * motion preference. Otherwise the CSS grid keeps the same visual rhythm.
+ */
+---
+
+<canvas class="scene-canvas" data-scene-background aria-hidden="true"></canvas>
+
+<script>
+  const canvas = document.querySelector<HTMLCanvasElement>('[data-scene-background]');
+  if (canvas) {
+    const start = async () => {
+      const narrow = window.matchMedia('(max-width: 860px)').matches;
+      const saveData = (navigator as Navigator & { connection?: { saveData?: boolean } }).connection?.saveData;
+      if (narrow || saveData) return;
+      const module = await import('../lib/three-scene');
+      if (!module.webglAvailable() || !module.motionAllowed()) return;
+      try {
+        module.createBackgroundScene(canvas);
+      } catch {
+        canvas.remove();
+      }
+    };
+
+    const idle = window.requestIdleCallback ?? ((callback: IdleRequestCallback) => setTimeout(() => callback({} as IdleDeadline), 400));
+    idle(() => {
+      void start();
+    });
+  }
+</script>

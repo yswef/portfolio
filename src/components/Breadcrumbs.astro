@@ -1,0 +1,66 @@
+---
+/**
+ * Visible trail for detail pages. Matches the BreadcrumbList data in the
+ * structured data, so what a visitor sees and what search engines read agree.
+ * The last item is the current page and is not a link.
+ */
+import type { Locale } from '../server/content';
+
+interface Trail {
+  label: string;
+  href?: string;
+}
+
+interface Props {
+  locale: Locale;
+  items: Trail[];
+}
+
+const { locale, items } = Astro.props;
+const label = locale === 'ar' ? 'مسار التنقل' : 'Breadcrumb';
+---
+
+<nav class="crumbs" aria-label={label}>
+  <ol>
+    {
+      items.map((item, index) => {
+        const last = index === items.length - 1;
+        return (
+          <li aria-current={last ? 'page' : undefined}>
+            {last || !item.href ? <span>{item.label}</span> : <a href={item.href}>{item.label}</a>}
+          </li>
+        );
+      })
+    }
+  </ol>
+</nav>
+
+<style>
+  .crumbs ol {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem 0.5rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    font-family: var(--font-mono, monospace);
+    font-size: 0.8rem;
+    color: var(--muted, #8fa096);
+  }
+  .crumbs li + li::before {
+    content: '/';
+    margin-inline-end: 0.5rem;
+    color: var(--line-strong, #34463c);
+  }
+  .crumbs a {
+    color: var(--muted, #8fa096);
+    text-decoration: none;
+  }
+  .crumbs a:hover,
+  .crumbs a:focus-visible {
+    color: var(--brass, #dfa74c);
+  }
+  .crumbs [aria-current='page'] span {
+    color: var(--paper, #e8efe9);
+  }
+</style>

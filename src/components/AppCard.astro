@@ -1,0 +1,44 @@
+---
+import TiltCard from './TiltCard.astro';
+import { formatDate, formatNumber, localizedPath, pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  app: ContentSnapshot['apps'][number];
+  locale: Locale;
+  index?: string;
+}
+
+const { app, locale, index } = Astro.props;
+const name = pick(app.name, locale);
+const tagline = pick(app.tagline, locale);
+const current = app.assets.filter((asset) => asset.isCurrent);
+const installer = current.find((asset) => asset.kind === 'installer') ?? current[0] ?? app.assets[0];
+const pricing =
+  app.pricing.mode === 'free'
+    ? t('label.free', locale)
+    : pick(app.pricing.label, locale) || t(app.pricing.mode === 'donation' ? 'label.donation' : 'label.paid', locale);
+---
+
+<TiltCard
+  href={localizedPath(locale, `apps/${app.slug}`)}
+  cursorLabel={t('action.download', locale)}
+  index={index}
+  class="item-card"
+>
+  <div class="row" style="justify-content:space-between; align-items:flex-start">
+    <span class={`badge ${app.pricing.mode === 'free' ? 'badge--free' : 'badge--paid'}`}>{pricing}</span>
+    {app.currentVersion && <span class="chip mono">v{String(app.currentVersion).replace(/^v/, '')}</span>}
+  </div>
+
+  <h3>{name}</h3>
+  {tagline && <p class="small muted">{tagline}</p>}
+
+  <div class="item-card__meta">
+    <span class="chip">{app.platform}</span>
+    <span class="chip">↓ <b>{formatNumber(app.assets.reduce((sum, asset) => sum + asset.downloads, 0), locale)}</b></span>
+    {installer?.publishedAt && (
+      <span class="chip">{formatDate(installer.publishedAt, locale)}</span>
+    )}
+  </div>
+</TiltCard>

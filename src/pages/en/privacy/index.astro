@@ -1,0 +1,24 @@
+---
+import Base from '../../../layouts/Base.astro';
+import PrivacyView from '../../../views/PrivacyView.astro';
+import { loadContent } from '../../../server/content';
+import { sectionMeta } from '../../../server/page-meta';
+
+const content = loadContent();
+const meta = sectionMeta(content, 'en', { kind: 'privacy', path: 'privacy' });
+const retentionDays = Number(import.meta.env.ANALYTICS_RETENTION_DAYS ?? '180') || 180;
+---
+
+<Base
+  content={content}
+  locale="en"
+  path="privacy"
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType={meta.ogType}
+  keywords={meta.keywords}
+>
+  <PrivacyView content={content} locale="en" retentionDays={retentionDays} />
+</Base>

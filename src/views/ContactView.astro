@@ -1,0 +1,123 @@
+---
+import ContactForm from '../components/ContactForm.svelte';
+import SectionHeading from '../components/SectionHeading.astro';
+import { localizedPath, pick, visibleSocials, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  turnstileSiteKey: string;
+}
+
+const { content, locale, turnstileSiteKey } = Astro.props;
+const socials = visibleSocials(content);
+const channels = [
+  content.profile.email ? { label: 'Email', value: content.profile.email, href: `mailto:${content.profile.email}` } : null,
+  content.profile.phone ? { label: 'Phone', value: content.profile.phone, href: `tel:${content.profile.phone.replace(/\s+/g, '')}` } : null,
+  content.profile.whatsapp
+    ? { label: 'WhatsApp', value: `+${content.profile.whatsapp.replace(/[^0-9]/g, '')}`, href: `https://wa.me/${content.profile.whatsapp.replace(/[^0-9]/g, '')}` }
+    : null,
+  ...socials.map((social) => ({
+    label: pick(social.label, 'en'),
+    value: social.handle ? `@${social.handle.replace(/^@/, '')}` : new URL(social.url).hostname,
+    href: social.url,
+  })),
+].filter((entry): entry is { label: string; value: string; href: string } => entry !== null);
+
+const projectTypes =
+  locale === 'ar'
+    ? ['موقع أو صفحة', 'أتمتة مهمة', 'تطبيق سطح مكتب', 'WordPress', 'ERPNext', 'أخرى']
+    : ['Website or page', 'Task automation', 'Desktop application', 'WordPress', 'ERPNext', 'Other'];
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading
+      eyebrow={t('nav.contact', locale)}
+      title={pick(content.contact.heading, locale)}
+      note={pick(content.contact.responseTime, locale)}
+      index="07"
+    />
+
+    <div class="grid grid-two">
+      <div class="panel stack">
+        {pick(content.contact.intro, locale) && <p class="muted">{pick(content.contact.intro, locale)}</p>}
+
+        {content.contact.formEnabled ? (
+          <ContactForm
+            client:load
+            locale={locale}
+            turnstileSiteKey={turnstileSiteKey}
+            projectTypes={projectTypes}
+            strings={{
+              name: t('form.name', locale),
+              email: t('form.email', locale),
+              phone: t('form.phone', locale),
+              company: t('form.company', locale),
+              projectType: t('form.projectType', locale),
+              budget: t('form.budget', locale),
+              subject: t('form.subject', locale),
+              message: t('form.message', locale),
+              messageHint: t('form.messageHint', locale),
+              send: t('action.send', locale),
+              sending: t('action.sending', locale),
+              success: t('form.success', locale),
+              error: t('form.error', locale),
+              rateLimited: t('form.rateLimited', locale),
+              turnstileFailed: t('form.turnstileFailed', locale),
+              invalidEmail: t('form.invalidEmail', locale),
+              required: t('form.required', locale),
+              honeypot: t('form.honeypot', locale),
+            }}
+          />
+        ) : (
+          <p class="muted">{locale === 'ar' ? 'النموذج معطّل حالياً. استخدم قنوات التواصل المباشر.' : 'The form is currently off. Please use a direct channel.'}</p>
+        )}
+      </div>
+
+      <div class="stack">
+        <div class="panel stack-sm">
+          <div class="panel-head"><span>{t('label.contactDirect', locale)}</span></div>
+          {channels.length === 0 ? (
+            <p class="muted small">{t('label.noData', locale)}</p>
+          ) : (
+            <ul class="stack-sm" style="list-style:none; padding:0">
+              {channels.map((channel) => (
+                <li class="row" style="justify-content:space-between">
+                  <span class="label">{channel.label}</span>
+                  <a class="mono" href={channel.href} target="_blank" rel="noopener">
+                    {channel.value}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+
+        {pick(content.contact.availabilityNote, locale) && (
+          <div class="panel panel--tight stack-sm">
+            <span class="label">{t('label.availability', locale)}</span>
+            <p class="small muted">{pick(content.contact.availabilityNote, locale)}</p>
+          </div>
+        )}
+
+        <div class="panel panel--tight stack-sm">
+          <span class="label">{locale === 'ar' ? 'كيف أبدأ' : 'How I start'}</span>
+          <ol class="small muted stack-sm" style="padding-inline-start:1.1rem; margin:0">
+            <li>{locale === 'ar' ? 'قراءة الطلب وتوضيح النطاق.' : 'Read the request and clarify the scope.'}</li>
+            <li>{locale === 'ar' ? 'تحديد الخطوات والوقت المتوقع.' : 'Define the steps and the expected time.'}</li>
+            <li>{locale === 'ar' ? 'تنفيذ وتسليم مع دعم بعد التسليم.' : 'Build, deliver and support after delivery.'}</li>
+          </ol>
+        </div>
+
+        <p class="hint">
+          {locale === 'ar'
+            ? 'لا يُطلب منك أي حساب. البيانات تُستخدم للرد على طلبك فقط.'
+            : 'No account is needed. Details are used only to answer your request.'}{' '}
+          <a href={localizedPath(locale, 'privacy')}>{t('footer.privacy', locale)}</a>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

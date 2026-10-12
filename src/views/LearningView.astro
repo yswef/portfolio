@@ -1,0 +1,89 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import LanguageBars from '../components/LanguageBars.astro';
+import { pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const skills = content.skills.filter((skill) => skill.isLearning);
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading
+      eyebrow={t('nav.learning', locale)}
+      title={t('section.learning', locale)}
+      note={locale === 'ar' ? 'التقدّم يُدار يدوياً من لوحة التحكم.' : 'Progress is tracked by hand in the control panel.'}
+      index="05"
+    />
+
+    {content.learning.length === 0 && <p class="muted">{t('state.empty', locale)}</p>}
+
+    <div class="grid grid-two">
+      {content.learning.map((item) => (
+        <article class="panel stack-sm" data-tilt>
+          <div class="row" style="justify-content:space-between; align-items:flex-start">
+            <h3 style="font-size:var(--step-1)">{pick(item.title, locale)}</h3>
+            <span class="mono small muted">{item.progress}%</span>
+          </div>
+          {pick(item.summary, locale) && <p class="small muted">{pick(item.summary, locale)}</p>}
+          <div class="meter meter--mint" style={`--value:${item.progress}`} role="progressbar" aria-valuenow={item.progress} aria-valuemin="0" aria-valuemax="100">
+            <span />
+          </div>
+          {item.bodyHtml[locale] && <div class="md small" set:html={item.bodyHtml[locale]} />}
+          {item.resources.length > 0 && (
+            <ul class="tag-row">
+              {item.resources.map((resource) => (
+                <li>
+                  <a class="tag tag--plain" href={resource.url} target="_blank" rel="noopener">
+                    {resource.label}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          )}
+          {(item.targetAt || item.startedAt) && (
+            <p class="hint mono">
+              {item.startedAt ? `${locale === 'ar' ? 'البداية' : 'since'} ${item.startedAt}` : ''}
+              {item.targetAt ? ` · ${locale === 'ar' ? 'الهدف' : 'target'} ${item.targetAt}` : ''}
+            </p>
+          )}
+        </article>
+      ))}
+    </div>
+
+    {skills.length > 0 && (
+      <div class="panel stack-sm">
+        <div class="panel-head"><span>{locale === 'ar' ? 'مهارات قيد التعلّم' : 'Skills in progress'}</span></div>
+        <div class="stack-sm">
+          {skills.map((skill) => (
+            <div class="stack-sm">
+              <div class="row" style="justify-content:space-between">
+                <span>{pick(skill.name, locale)}</span>
+                <span class="mono small muted">{skill.learningProgress}%</span>
+              </div>
+              <div class="meter meter--mint" style={`--value:${skill.learningProgress}`}>
+                <span />
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+    )}
+
+    {content.languages.length > 0 && (
+      <div class="panel stack-sm">
+        <div class="panel-head">
+          <span>{t('section.languages', locale)}</span>
+          <span class="mono">GitHub</span>
+        </div>
+        <LanguageBars languages={content.languages} locale={locale} />
+      </div>
+    )}
+  </div>
+</section>

@@ -1,0 +1,48 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import { formatDate, localizedPath, pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const pages = content.pages;
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading
+      eyebrow={t('nav.pages', locale)}
+      title={t('section.blog', locale) === '' ? '' : t('nav.pages', locale)}
+      note={
+        locale === 'ar'
+          ? 'صفحات HTML جاهزة للعرض في المتصفح، بعضها عام وبعضها يظهر لصاحب الموقع فقط.'
+          : 'HTML pages served through the site. Some are public, the rest are visible to the owner only.'
+      }
+      index="08"
+    />
+
+    {pages.length === 0 ? (
+      <p class="muted">{t('state.empty', locale)}</p>
+    ) : (
+      <div class="grid grid-auto">
+        {pages.map((page) => (
+          <article class="panel item-card" data-tilt>
+            <h3>{pick(page.title, locale)}</h3>
+            {pick(page.summary, locale) && <p class="small muted">{pick(page.summary, locale)}</p>}
+            <div class="item-card__meta">
+              <span class="chip">{page.fileCount} {t('label.pageFiles', locale)}</span>
+              {page.updatedAt && <span class="chip">{formatDate(page.updatedAt, locale)}</span>}
+            </div>
+            <a class="btn btn--sm" href={localizedPath(locale, `pages/${page.slug}`)}>
+              {t('action.readMore', locale)}
+            </a>
+          </article>
+        ))}
+      </div>
+    )}
+  </div>
+</section>

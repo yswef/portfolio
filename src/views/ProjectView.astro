@@ -1,0 +1,174 @@
+---
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import SectionHeading from '../components/SectionHeading.astro';
+import DocsViewer from '../components/DocsViewer.astro';
+import StarButton from '../components/StarButton.svelte';
+import {
+  categoryLabel,
+  formatDate,
+  formatRelative,
+  localizedPath,
+  pick,
+  visibleProjects,
+  type ContentSnapshot,
+  type Locale,
+} from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  project: ContentSnapshot['projects'][number];
+  docsFiles: { path: string; title: string | null; isEntry: boolean | number }[];
+  oauthEnabled: boolean;
+}
+
+const { content, locale, project, docsFiles, oauthEnabled } = Astro.props;
+const name = pick(project.name, locale);
+const description = pick(project.description, locale);
+const related = visibleProjects(content)
+  .filter((candidate) => candidate.slug !== project.slug && candidate.category === project.category)
+  .slice(0, 3);
+
+const facts: { label: string; value: string }[] = [
+  { label: t('label.language', locale), value: project.language ?? '' },
+  { label: t('label.license', locale), value: project.license ?? '' },
+  { label: t('label.category', locale), value: categoryLabel(project.category, locale) },
+  { label: t('label.updated', locale), value: project.pushedAt ? formatRelative(project.pushedAt, locale) : '' },
+  { label: t('label.stars', locale), value: String(project.stars) },
+  { label: t('label.forks', locale), value: String(project.forks) },
+].filter((fact) => fact.value);
+---
+
+<section class="section">
+  <div class="shell stack">
+    <Breadcrumbs locale={locale} items={[{ label: t('nav.projects', locale), href: localizedPath(locale, 'projects') }, { label: pick(project.name, locale) }]} />
+    <nav class="small muted mono" aria-label="breadcrumb">
+      <a href={localizedPath(locale, '')}>{t('nav.home', locale)}</a> /
+      <a href={localizedPath(locale, 'projects')}>{t('nav.projects', locale)}</a> /
+      <span>{name}</span>
+    </nav>
+
+    <header class="stack-sm">
+      <span class="eyebrow">{categoryLabel(project.category, locale)}</span>
+      <h1>{name}</h1>
+      {description && <p class="lede">{description}</p>}
+      <div class="row">
+        {project.homepage && (
+          <a class="btn" href={project.homepage} target="_blank" rel="noopener">
+            {locale === 'ar' ? 'الموقع' : 'Website'}
+          </a>
+        )}
+        <a class="btn btn--ghost" href={project.url} target="_blank" rel="noopener">
+          {t('action.repository', locale)}
+        </a>
+        {project.release && (
+          <a class="btn btn--ghost" href={localizedPath(locale, `projects/${project.slug}`) + '#docs-title'}>
+            {t('action.readme', locale)}
+          </a>
+        )}
+      </div>
+    </header>
+
+    <div class="grid grid-two">
+      <div class="panel stack-sm">
+        <div class="panel-head"><span>{t('section.facts', locale)}</span><span class="mono">repo</span></div>
+        <dl class="stack-sm" style="margin:0">
+          {facts.map((fact) => (
+            <div class="row" style="justify-content:space-between; gap:1rem">
+              <dt class="hint mono" style="margin:0">{fact.label}</dt>
+              <dd class="mono" style="margin:0">{fact.value}</dd>
+            </div>
+          ))}
+        </dl>
+        {project.languages.length > 0 && (
+          <div class="stack-sm" style="margin-block-start:0.5rem">
+            <span class="label">{t('label.languages', locale)}</span>
+            <div class="lang-bars">
+              {project.languages.map((language) => (
+                <div class="lang-bar">
+                  <span class="mono">{language.name}</span>
+                  <span class="lang-bar__track">
+                    <span class="lang-bar__fill" style="inline-size:{language.percent}%" />
+                  </span>
+                  <span class="mono muted">{language.percent}%</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+
+      <div class="stack">
+        {project.topics.length > 0 && (
+          <div class="panel panel--tight stack-sm">
+            <span class="label">{t('label.topics', locale)}</span>
+            <ul class="tag-row">
+              {project.topics.map((topic) => (
+                <li class="tag">{topic}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        <StarButton
+          repo={project.fullName}
+          stars={project.stars}
+          locale={locale}
+          oauthEnabled={oauthEnabled}
+          labels={{
+            star: t('action.star', locale),
+            starWithGithub: t('action.starWithGithub', locale),
+            openRepo: t('action.openRepo', locale),
+            consent: t('action.starConsent', locale),
+          }}
+        />
+
+        {project.release && (
+          <div class="panel panel--tight stack-sm">
+            <div class="panel-head">
+              <span>{t('label.releaseNotes', locale)}</span>
+              <span class="mono">v{String(project.release.tag).replace(/^v/, '')}</span>
+            </div>
+            <p class="hint mono">
+              {project.release.publishedAt ? formatDate(project.release.publishedAt, locale) : ''} · ↓ {project.release.downloads}
+            </p>
+            {project.release.notesHtml ? (
+              <div class="md" set:html={project.release.notesHtml} />
+            ) : (
+              <p class="muted small">{t('label.noData', locale)}</p>
+            )}
+            <ul class="tag-row">
+              {project.release.assets.slice(0, 6).map((asset) => (
+                <li class="tag tag--plain">{asset.fileName}</li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </div>
+  </div>
+</section>
+
+<DocsViewer project={project} locale={locale} files={docsFiles} />
+
+{
+  related.length > 0 && (
+    <section class="section">
+      <div class="shell">
+        <SectionHeading eyebrow={t('nav.projects', locale)} title={locale === 'ar' ? 'مشاريع قريبة' : 'Nearby projects'} />
+        <div class="grid grid-auto">
+          {related.map((candidate) => (
+            <article class="panel panel--tight item-card">
+              <h3>{pick(candidate.name, locale)}</h3>
+              <p class="small muted">{pick(candidate.description, locale)}</p>
+              <a class="btn btn--ghost btn--sm" href={localizedPath(locale, `projects/${candidate.slug}`)}>
+                {t('action.viewProject', locale)}
+              </a>
+            </article>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}

@@ -1,0 +1,165 @@
+---
+/**
+ * Home page hero: name, headline, a short terminal block that types out the
+ * focus areas, and the interactive 3D core.
+ */
+import HeroScene from './HeroScene.astro';
+import { formatNumber, localizedPath, pick, visibleApps, visibleProjects, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const projects = visibleProjects(content);
+const apps = visibleApps(content);
+const name = pick(content.profile.name, locale);
+const headline = pick(content.profile.headline, locale);
+const summary = pick(content.profile.summary, locale);
+const title = pick(content.home.title, locale) || headline;
+const subtitle = pick(content.home.subtitle, locale);
+const totalStars = projects.reduce((sum, project) => sum + project.stars, 0);
+const totalDownloads = apps.reduce((sum, app) => sum + app.assets.reduce((acc, asset) => acc + asset.downloads, 0), 0);
+
+const prompt = locale === 'ar' ? 'يوسف@العمل' : 'yousuf@workbench';
+const lines = content.home.terminalLines.length
+  ? content.home.terminalLines
+  : [
+      locale === 'ar' ? 'python --version  →  3.x' : 'python --version  →  3.x',
+      `${locale === 'ar' ? 'المجالات' : 'focus'}: web · automation · desktop`,
+      `${locale === 'ar' ? 'أيضاً' : 'also'}: WordPress · ERPNext`,
+      locale === 'ar' ? 'التعلّم الحالي: mobile · security' : 'learning: mobile · security',
+    ];
+
+const stats = [
+  { value: projects.length, label: locale === 'ar' ? 'مشروع عام' : 'public projects' },
+  { value: totalStars, label: t('label.stars', locale) },
+  { value: apps.length, label: locale === 'ar' ? 'تطبيق للتنزيل' : 'downloadable apps' },
+  { value: totalDownloads, label: t('action.downloads', locale) },
+].filter((stat) => stat.value > 0);
+---
+
+<section class="hero">
+  <div class="shell hero__grid">
+    <div class="stack">
+      <span class="eyebrow">{pick(content.home.kicker, locale)}</span>
+      <h1>{title}</h1>
+      {summary && <p class="lede">{summary}</p>}
+      {subtitle && <p class="lede">{subtitle}</p>}
+
+      <div class="row" style="margin-block-start:0.5rem">
+        <a class="btn btn--primary" href={localizedPath(locale, 'projects')}>{t('action.allProjects', locale)}</a>
+        {apps.length > 0 && (
+          <a class="btn" href={localizedPath(locale, 'apps')}>{t('action.allApps', locale)}</a>
+        )}
+        <a class="btn btn--ghost" href={localizedPath(locale, 'contact')}>
+          {t('label.workRequest', locale)}
+        </a>
+      </div>
+
+      {
+        stats.length > 0 && (
+          <dl class="row" style="gap:1.75rem; margin-block-start:0.75rem">
+            {stats.map((stat) => (
+              <div class="stat">
+                <dt class="sr-only">{stat.label}</dt>
+                <dd style="margin:0">
+                  <b>{formatNumber(stat.value, locale)}</b>
+                  <span>{stat.label}</span>
+                </dd>
+              </div>
+            ))}
+          </dl>
+        )
+      }
+
+      <div class="terminal" style="margin-block-start:0.75rem" aria-hidden="true" data-depth="0.6">
+        <div class="terminal__bar">
+          <i></i><i></i><i></i>
+          <span style="margin-inline-start:0.5rem">{prompt}</span>
+        </div>
+        <div class="terminal__body" data-typer data-lines={JSON.stringify(lines)}>
+          <p class="terminal__line"><b>$</b> whoami<span class="caret"></span></p>
+        </div>
+      </div>
+    </div>
+
+    <div>
+      <HeroScene label={locale === 'ar' ? 'اسحب المؤشر فوق المجسّم' : 'Move the pointer over the object'} />
+    </div>
+  </div>
+</section>
+
+<script>
+  // Terminal lines appear one after another, and only once the hero is visible.
+  const body = document.querySelector<HTMLElement>('[data-typer]');
+  if (body) {
+    const raw = body.dataset.lines ?? '[]';
+    const lines: string[] = JSON.parse(raw);
+    const reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+    const render = () => {
+      if (reduced) {
+        body.innerHTML = lines
+          .map((line) => `<p class="terminal__line"><b>$</b> ${line.replace(/</g, '&lt;')}</p>`)
+          .join('');
+        return;
+      }
+      let index = 0;
+      const step = () => {
+        if (index >= lines.length) return;
+        const paragraph = document.createElement('p');
+        paragraph.className = 'terminal__line';
+        paragraph.innerHTML = `<b>$</b> ${lines[index]!.replace(/</g, '&lt;')}`;
+        body.appendChild(paragraph);
+        index += 1;
+        setTimeout(step, 420);
+      };
+      setTimeout(step, 320);
+    };
+
+    const observer = new IntersectionObserver(([entry]) => {
+      if (entry?.isIntersecting) {
+        render();
+        observer.disconnect();
+      }
+    });
+    observer.observe(body);
+  }
+</script>
+
+<script>
+  // Depth layers: elements marked with data-depth drift against the pointer at
+  // different distances, which gives the hero a sense of depth. Off for touch
+  // screens and for visitors who asked for reduced motion.
+  const reduce = document.documentElement.dataset.motion === 'reduced';
+  const fine = document.documentElement.dataset.pointer === 'fine';
+  const layers = Array.from(document.querySelectorAll<HTMLElement>('[data-depth]'));
+
+  if (layers.length && fine && !reduce) {
+    let frame = 0;
+    let pointerX = 0;
+    let pointerY = 0;
+
+    const paint = () => {
+      frame = 0;
+      for (const layer of layers) {
+        const depth = Number(layer.dataset.depth) || 0;
+        layer.style.transform = `translate3d(${(-pointerX * depth * 22).toFixed(2)}px, ${(-pointerY * depth * 14).toFixed(2)}px, 0)`;
+      }
+    };
+
+    window.addEventListener(
+      'pointermove',
+      (event) => {
+        pointerX = event.clientX / window.innerWidth - 0.5;
+        pointerY = event.clientY / window.innerHeight - 0.5;
+        if (!frame) frame = requestAnimationFrame(paint);
+      },
+      { passive: true },
+    );
+  }
+</script>
+

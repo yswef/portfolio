@@ -1,0 +1,68 @@
+# Template for PyInstaller projects.
+# Copy to .github/workflows/build-windows.yml in a project repository.
+#
+# On a tag like v1.2.0 it builds the Windows executable, creates a portable zip
+# and an installer when Inno Setup is present in the spec, writes SHA256
+# checksums and publishes everything to a GitHub Release. The portfolio picks
+# the new release up automatically through its webhook or the 15-minute sync.
+name: build-windows
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if (Test-Path requirements.txt) { pip install -r requirements.txt }
+          pip install pyinstaller
+
+      - name: Build executable
+        shell: pwsh
+        run: |
+          $spec = Get-ChildItem -Filter *.spec | Select-Object -First 1
+          if ($spec) { pyinstaller --noconfirm $spec.FullName } else { pyinstaller --noconfirm --onefile --windowed main.py }
+
+      - name: Package portable zip
+        shell: pwsh
+        run: |
+          $name = "${{ github.event.repository.name }}"
+          $version = "${{ github.ref_name }}"
+          $folder = Get-ChildItem dist -Directory | Select-Object -First 1
+          if ($folder) {
+            Compress-Archive -Path "$($folder.FullName)\*" -DestinationPath "dist\$name-$version-portable.zip" -Force
+          } else {
+            Copy-Item "dist\*.exe" "dist\$name-$version-portable.exe"
+          }
+
+      - name: Write checksums
+        shell: pwsh
+        run: |
+          Get-ChildItem dist -File | Where-Object { $_.Extension -in '.zip', '.exe' } | ForEach-Object {
+            $hash = (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower()
+            "$hash  $($_.Name)"
+          } | Set-Content -Path dist\SHA256SUMS.txt -Encoding ascii
+
+      - name: Publish release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            dist/*.zip
+            dist/*.exe
+            dist/SHA256SUMS.txt
+          generate_release_notes: true

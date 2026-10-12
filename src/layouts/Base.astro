@@ -1,0 +1,250 @@
+---
+/**
+ * Base layout: document head (SEO, hreflang, social cards, structured data),
+ * the fixed background scene, the custom pointer and the analytics beacon.
+ */
+import '../styles/theme.css';
+import SiteHeader from '../components/SiteHeader.astro';
+import SiteFooter from '../components/SiteFooter.astro';
+import CursorLayer from '../components/CursorLayer.astro';
+import SceneBackground from '../components/SceneBackground.astro';
+import {
+  absoluteUrl,
+  localizedPath,
+  type ContentSnapshot,
+  type Locale,
+} from '../server/content';
+import { ogImagePath } from '../server/routes';
+import { DIRECTION, HTML_LANG, t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  /** Route path without the language prefix, e.g. `projects/my-tool`. */
+  path: string;
+  /**
+   * Path used by the language switch and the hreflang alternates. Defaults to
+   * `path`; the 404 page points both languages at the home page instead.
+   */
+  alternatePath?: string;
+  title: string;
+  description?: string;
+  ogImage?: string;
+  /** One or more JSON-LD documents. */
+  jsonLd?: Record<string, unknown>[];
+  noindex?: boolean;
+  ogType?: 'website' | 'article' | 'profile';
+  bodyClass?: string;
+  publishedTime?: string | null;
+  modifiedTime?: string | null;
+  keywords?: string[];
+}
+
+const {
+  content,
+  locale,
+  path,
+  alternatePath,
+  title,
+  description,
+  ogImage,
+  jsonLd = [],
+  noindex = false,
+  ogType = 'website',
+  bodyClass = '',
+  publishedTime = null,
+  modifiedTime = null,
+  keywords = [],
+} = Astro.props;
+
+const dir = DIRECTION[locale];
+const altPath = alternatePath ?? path;
+const arPath = localizedPath('ar', altPath);
+const enPath = localizedPath('en', altPath);
+const canonical = absoluteUrl(content, locale === 'ar' ? arPath : enPath);
+const siteOrigin = absoluteUrl(content, '/');
+const metaDescription =
+  (description ?? '').trim() ||
+  (locale === 'ar' ? content.seo.defaultDescription.ar : content.seo.defaultDescription.en) ||
+  (locale === 'ar' ? content.profile.headline.ar : content.profile.headline.en);
+const image = absoluteUrl(content, ogImage ?? content.seo.ogImage ?? ogImagePath(locale, ''));
+const siteName = locale === 'ar' ? content.profile.name.ar : content.profile.name.en;
+const allKeywords = [...keywords, ...(content.seo.keywords ?? [])].filter(Boolean).slice(0, 20);
+const generatedAt = content.generatedAt && content.generatedAt !== '1970-01-01T00:00:00.000Z' ? content.generatedAt : null;
+---
+
+<!doctype html>
+<html lang={HTML_LANG[locale]} dir={dir} data-locale={locale}>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>{title}</title>
+    <meta name="description" content={metaDescription} />
+    {allKeywords.length > 0 && <meta name="keywords" content={allKeywords.join(', ')} />}
+    <link rel="canonical" href={canonical} />
+
+    <link rel="alternate" hreflang="ar" href={absoluteUrl(content, arPath)} />
+    <link rel="alternate" hreflang="en" href={absoluteUrl(content, enPath)} />
+    <link rel="alternate" hreflang="x-default" href={absoluteUrl(content, arPath)} />
+
+    <meta name="theme-color" content="#060807" />
+    <meta name="color-scheme" content="dark" />
+    {noindex && <meta name="robots" content="noindex, nofollow, noarchive" />}
+    {!noindex && <meta name="robots" content="index, follow, max-image-preview:large" />}
+
+    <meta property="og:type" content={ogType} />
+    <meta property="og:site_name" content={siteName} />
+    <meta property="og:title" content={title} />
+    <meta property="og:description" content={metaDescription} />
+    <meta property="og:url" content={canonical} />
+    <meta property="og:image" content={image} />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:locale" content={locale === 'ar' ? 'ar_SA' : 'en_GB'} />
+    <meta property="og:locale:alternate" content={locale === 'ar' ? 'en_GB' : 'ar_SA'} />
+    {publishedTime && <meta property="article:published_time" content={publishedTime} />}
+    {modifiedTime && <meta property="article:modified_time" content={modifiedTime} />}
+
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content={title} />
+    <meta name="twitter:description" content={metaDescription} />
+    <meta name="twitter:image" content={image} />
+    {content.seo.twitterHandle && <meta name="twitter:site" content={content.seo.twitterHandle} />}
+    {content.seo.twitterHandle && <meta name="twitter:creator" content={content.seo.twitterHandle} />}
+
+    {content.seo.googleVerification && <meta name="google-site-verification" content={content.seo.googleVerification} />}
+    {content.seo.bingVerification && <meta name="msvalidate.01" content={content.seo.bingVerification} />}
+
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link rel="apple-touch-icon" href="/icon-192.png" />
+    <link rel="manifest" href="/manifest.webmanifest" />
+
+    <link rel="preload" href="/fonts/arabic-400.woff2" as="font" type="font/woff2" crossorigin />
+    <link rel="preload" href="/fonts/mono-400.woff2" as="font" type="font/woff2" crossorigin />
+
+    {/* Geo information for local search: only emitted when the owner filled it in. */}
+    {content.profile.countryCode && <meta name="geo.region" content={content.profile.regionCode || content.profile.countryCode} />}
+    {content.profile.countryCode && content.profile.city.en && <meta name="geo.placename" content={content.profile.city.en} />}
+    {content.profile.latitude !== null && content.profile.longitude !== null && (
+      <>
+        <meta name="geo.position" content={`${content.profile.latitude};${content.profile.longitude}`} />
+        <meta name="ICBM" content={`${content.profile.latitude}, ${content.profile.longitude}`} />
+      </>
+    )}
+
+    <script type="application/ld+json" set:html={JSON.stringify(
+      {
+        '@context': 'https://schema.org',
+        '@graph': jsonLd,
+      },
+    )} />
+
+    <script is:inline>
+      // Marks the document early so the pointer script can take over without a flash.
+      (function () {
+        var root = document.documentElement;
+        var reduced = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var fine = window.matchMedia('(hover: hover) and (pointer: fine)').matches;
+        root.dataset.motion = reduced ? 'reduced' : 'full';
+        root.dataset.pointer = fine ? 'fine' : 'coarse';
+      })();
+    </script>
+  </head>
+
+  <body class={bodyClass}>
+    <a class="skip" href="#main">{t('a11y.skipToContent', locale)}</a>
+    <SceneBackground />
+    <CursorLayer locale={locale} />
+    <SiteHeader content={content} locale={locale} currentPath={path} altPath={altPath} />
+
+    <main id="main">
+      <slot />
+    </main>
+
+    <SiteFooter content={content} locale={locale} generatedAt={generatedAt} />
+
+    <script>
+      // First-party analytics: one beacon when the page appears, one when it is
+      // left, carrying the time spent on it. Nothing is sent if the browser
+      // reports "do not track".
+      const LOCALE = document.documentElement.dataset.locale === 'en' ? 'en' : 'ar';
+      const KEY_VISITOR = 'pf.vid';
+      const KEY_SESSION = 'pf.sid';
+      const KEY_LAST_SEEN = 'pf.ls';
+
+      function id(length = 32) {
+        const bytes = new Uint8Array(length / 2);
+        crypto.getRandomValues(bytes);
+        return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+      }
+
+      function readUtm() {
+        const params = new URLSearchParams(location.search);
+        const utm: Record<string, string> = {};
+        for (const key of ['source', 'medium', 'campaign', 'term', 'content']) {
+          const value = params.get(`utm_${key}`);
+          if (value) utm[key] = value.slice(0, 150);
+        }
+        return Object.keys(utm).length ? utm : undefined;
+      }
+
+      function payload(type: 'pageview' | 'exit') {
+        const now = Date.now();
+        const previous = Number(localStorage.getItem(KEY_LAST_SEEN) || 0);
+        localStorage.setItem(KEY_LAST_SEEN, String(now));
+        return {
+          type,
+          visitorId: localStorage.getItem(KEY_VISITOR) || undefined,
+          sessionId: sessionStorage.getItem(KEY_SESSION) || undefined,
+          path: location.pathname,
+          title: document.title.slice(0, 200),
+          locale: LOCALE,
+          referrer: document.referrer || undefined,
+          elapsedSeconds: previous ? Math.min(3600, Math.round((now - previous) / 1000)) : 0,
+          maxScroll: Math.min(100, Math.round((window.scrollY + window.innerHeight) / Math.max(1, document.body.scrollHeight) * 100)),
+          screenWidth: screen.width,
+          screenHeight: screen.height,
+          viewportWidth: innerWidth,
+          viewportHeight: innerHeight,
+          language: navigator.language,
+          utm: readUtm(),
+        };
+      }
+
+      function send(type: 'pageview' | 'exit') {
+        // The visitor's "do not track" choice wins over any measurement.
+        const dnt = navigator.doNotTrack;
+        if (dnt === '1' || dnt === 'yes') return;
+        if (!localStorage.getItem(KEY_VISITOR)) localStorage.setItem(KEY_VISITOR, id());
+        if (!sessionStorage.getItem(KEY_SESSION)) sessionStorage.setItem(KEY_SESSION, id());
+        const body = payload(type);
+        const request = new Blob([JSON.stringify(body)], { type: 'application/json' });
+        if (type === 'exit' && navigator.sendBeacon) {
+          navigator.sendBeacon('/api/track', request);
+          return;
+        }
+        fetch('/api/track', {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+          keepalive: true,
+          credentials: 'same-origin',
+        }).catch(() => undefined);
+      }
+
+      send('pageview');
+
+      let sent = false;
+      document.addEventListener('visibilitychange', () => {
+        if (document.visibilityState === 'hidden' && !sent) {
+          sent = true;
+          send('exit');
+          setTimeout(() => (sent = false), 1000);
+        }
+      });
+      window.addEventListener('pagehide', () => {
+        if (!sent) send('exit');
+      });
+    </script>
+  </body>
+</html>

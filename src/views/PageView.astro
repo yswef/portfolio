@@ -1,0 +1,48 @@
+---
+import { localizedPath } from '../server/content';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  page: ContentSnapshot['pages'][number];
+}
+
+const { content, locale, page } = Astro.props;
+const src = `/p/${page.slug}/`;
+void content;
+---
+
+<section class="section">
+  <div class="shell stack">
+    <Breadcrumbs locale={locale} items={[{ label: t('nav.pages', locale), href: localizedPath(locale, 'pages') }, { label: pick(page.title, locale) }]} />
+    <nav class="small muted mono" aria-label="breadcrumb">
+      <a href={locale === 'ar' ? '/' : '/en/'}>{t('nav.home', locale)}</a> /
+      <a href={locale === 'ar' ? '/pages/' : '/en/pages/'}>{t('nav.pages', locale)}</a> /
+      <span>{pick(page.title, locale)}</span>
+    </nav>
+
+    <header class="stack-sm">
+      <h1>{pick(page.title, locale)}</h1>
+      {pick(page.summary, locale) && <p class="lede">{pick(page.summary, locale)}</p>}
+      <div class="row">
+        <a class="btn btn--ghost btn--sm" href={src} target="_blank" rel="noopener">
+          {t('label.openStandalone', locale)}
+        </a>
+        <span class="hint">{t('label.docsSandboxNote', locale)}</span>
+      </div>
+    </header>
+
+    <iframe
+      class="doc-frame"
+      src={src}
+      sandbox="allow-scripts allow-popups allow-forms"
+      referrerpolicy="no-referrer"
+      loading="lazy"
+      title={pick(page.title, locale)}
+      style="min-block-size:78vh"
+    />
+  </div>
+</section>

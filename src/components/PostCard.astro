@@ -1,0 +1,29 @@
+---
+import TiltCard from './TiltCard.astro';
+import { formatDate, localizedPath, pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  post: ContentSnapshot['posts'][number];
+  locale: Locale;
+  index?: string;
+}
+
+const { post, locale, index } = Astro.props;
+const title = pick(post.title, locale);
+const excerpt = pick(post.excerpt, locale);
+---
+
+<TiltCard href={localizedPath(locale, `blog/${post.slug}`)} cursorLabel={t('action.readMore', locale)} index={index}>
+  <h3>{title}</h3>
+  {excerpt && <p class="small muted">{excerpt}</p>}
+  <div class="item-card__meta">
+    {post.publishedAt && <span class="chip">{formatDate(post.publishedAt, locale)}</span>}
+    <span class="chip">
+      <b>{post.readingMinutes}</b> {t('label.readingTime', locale)}
+    </span>
+    {post.tags.slice(0, 3).map((tag) => (
+      <span class="chip">#{tag}</span>
+    ))}
+  </div>
+</TiltCard>

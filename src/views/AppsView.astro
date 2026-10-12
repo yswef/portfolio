@@ -1,0 +1,76 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import AppCard from '../components/AppCard.astro';
+import { formatNumber, localizedPath, pick, visibleApps, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  mode?: string;
+}
+
+const { content, locale, mode } = Astro.props;
+const all = visibleApps(content);
+const apps = mode ? all.filter((app) => app.pricing.mode === mode) : all;
+const totalDownloads = all.reduce((sum, app) => sum + app.assets.reduce((acc, asset) => acc + asset.downloads, 0), 0);
+const filters = [
+  { key: '', label: locale === 'ar' ? 'الكل' : 'All' },
+  { key: 'free', label: t('label.free', locale) },
+  { key: 'paid', label: t('label.paid', locale) },
+  { key: 'donation', label: t('label.donation', locale) },
+];
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading
+      eyebrow={t('nav.apps', locale)}
+      title={t('section.apps', locale)}
+      note={t('section.appsNote', locale)}
+      index="02"
+    />
+
+    <div class="row">
+      <span class="chip">
+        <b>{formatNumber(all.length, locale)}</b> {locale === 'ar' ? 'تطبيق' : 'apps'}
+      </span>
+      <span class="chip">
+        ↓ <b>{formatNumber(totalDownloads, locale)}</b> {t('action.downloads', locale)}
+      </span>
+    </div>
+
+    {
+      all.length > 0 && (
+        <nav class="tag-row" aria-label={t('label.pricing', locale)}>
+          {filters.map((filter) => (
+            <a
+              class={`tag tag--plain ${(mode ?? '') === filter.key ? 'tag--accent' : ''}`}
+              href={`${localizedPath(locale, 'apps')}${filter.key ? `?mode=${filter.key}` : ''}`}
+            >
+              {filter.label}
+            </a>
+          ))}
+        </nav>
+      )
+    }
+
+    {
+      apps.length === 0 ? (
+        <p class="muted">{t('state.empty', locale)}</p>
+      ) : (
+        <div class="grid grid-auto">
+          {apps.map((app, index) => (
+            <AppCard app={app} locale={locale} index={String(index + 1).padStart(2, '0')} />
+          ))}
+        </div>
+      )
+    }
+
+    <p class="hint">
+      {locale === 'ar'
+        ? 'كل ملفات التنزيل مستضافة على GitHub Releases، والموقع يسجّل عدد التنزيلات فقط.'
+        : 'Every download file is hosted on GitHub Releases; the site only records the counters.'}
+    </p>
+  </div>
+</section>

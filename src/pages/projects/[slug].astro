@@ -1,0 +1,34 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectView from '../../views/ProjectView.astro';
+import { loadContent, visibleProjects } from '../../server/content';
+import { projectMeta } from '../../server/page-meta';
+import type { ContentSnapshot } from '../../server/content';
+
+export function getStaticPaths() {
+  const content = loadContent();
+  return visibleProjects(content).map((project) => ({ params: { slug: project.slug }, props: { project } }));
+}
+
+interface Props {
+  project: ContentSnapshot['projects'][number];
+}
+
+const content = loadContent();
+const { project } = Astro.props;
+const meta = projectMeta(content, 'ar', project);
+const oauthEnabled = import.meta.env.PUBLIC_OAUTH_STAR === '1';
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path={`projects/${project.slug}`}
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  keywords={meta.keywords}
+>
+  <ProjectView content={content} locale="ar" project={project} docsFiles={project.docsFiles} oauthEnabled={oauthEnabled} />
+</Base>

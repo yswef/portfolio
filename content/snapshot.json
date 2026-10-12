@@ -1,0 +1,256 @@
+{
+  "version": 1,
+  "generatedAt": "1970-01-01T00:00:00.000Z",
+  "site": {
+    "url": "https://portfolio.pages.dev",
+    "defaultLocale": "ar",
+    "locales": ["ar", "en"],
+    "timezone": "Asia/Riyadh"
+  },
+  "profile": {
+    "name": { "ar": "يوسف الحمزي", "en": "Yousif Alhamzi" },
+    "headline": {
+      "ar": "مطوّر Python — ويب، أتمتة، وتطبيقات سطح مكتب",
+      "en": "Python developer — web, automation and desktop apps"
+    },
+    "summary": {
+      "ar": "مطوّر Python منذ نحو خمس سنوات، تعلّمت البرمجة ذاتياً وعملت في شركة ناشئة. أركّز على تطوير الويب، وأتمتة المهام، وتطبيقات سطح المكتب لويندوز، وأعمل أيضاً على WordPress وأنظمة ERPNext. أتعلّم حالياً تطوير تطبيقات الموبايل والأمن السيبراني، وأبني تطبيقات بديلة مجانية أو منخفضة التكلفة للبرامج المدفوعة.",
+      "en": "Python developer for about five years. Self-taught, with experience in a startup. I focus on web development, task automation and Windows desktop applications, and I also work with WordPress and ERPNext. Right now I am learning mobile application development and cybersecurity, and I build free or low-cost alternatives to paid software."
+    },
+    "yearsExperience": 5,
+    "selfTaught": true,
+    "city": { "ar": "", "en": "" },
+    "country": "",
+    "countryCode": "",
+    "regionCode": "",
+    "latitude": null,
+    "longitude": null,
+    "timezone": "Asia/Riyadh",
+    "languages": { "ar": "العربية، الإنجليزية", "en": "Arabic, English" },
+    "availability": { "ar": "أبحث عن عمل", "en": "Looking for work" },
+    "email": "",
+    "phone": "",
+    "whatsapp": "",
+    "githubUsername": "yswef",
+    "avatar": "",
+    "resumeUrl": ""
+  },
+  "seo": {
+    "defaultTitle": {
+      "ar": "يوسف الحمزي — مطوّر Python",
+      "en": "Yousif Alhamzi — Python developer"
+    },
+    "defaultDescription": {
+      "ar": "مطوّر Python بخبرة نحو خمس سنوات في تطوير الويب والأتمتة وتطبيقات سطح المكتب، مع عمل على WordPress وERPNext.",
+      "en": "Python developer with about five years of experience in web development, automation and desktop applications, plus work on WordPress and ERPNext."
+    },
+    "keywords": [
+      "Python developer",
+      "أتمتة المهام",
+      "تطبيقات سطح مكتب",
+      "Windows desktop apps",
+      "WordPress",
+      "ERPNext",
+      "مطوّر بايثون"
+    ],
+    "ogImage": "",
+    "twitterHandle": "",
+    "googleVerification": "",
+    "bingVerification": "",
+    "areaServed": { "ar": "عن بعد", "en": "Remote" },
+    "canonicalBase": ""
+  },
+  "home": {
+    "kicker": { "ar": "مطوّر بايثون", "en": "Python developer" },
+    "title": { "ar": "", "en": "" },
+    "subtitle": {
+      "ar": "أبني أدوات عملية: مواقع، سكربتات أتمتة، وتطبيقات ويندوز تُنزَّل وتعمل مباشرة.",
+      "en": "I build practical tools: websites, automation scripts and Windows applications you can download and run."
+    },
+    "terminalLines": [],
+    "statsNote": { "ar": "", "en": "" }
+  },
+  "contact": {
+    "heading": { "ar": "طلب عمل أو تعاون", "en": "Work request or collaboration" },
+    "intro": {
+      "ar": "اكتب تفاصيل العمل المطلوب وأعود إليك بالخطوات والوقت المتوقع.",
+      "en": "Describe the work you need and I will come back with the steps and an estimate."
+    },
+    "responseTime": { "ar": "الرد عادة خلال 24 إلى 48 ساعة.", "en": "Usually answered within 24 to 48 hours." },
+    "availabilityNote": { "ar": "أبحث عن عمل حالياً.", "en": "Currently looking for work." },
+    "formEnabled": true,
+    "allowFileLinks": false
+  },
+  "publishing": {
+    "pageSize": 12,
+    "hiringBanner": false,
+    "bannerText": { "ar": "", "en": "" }
+  },
+  "services": [
+    {
+      "slug": "web-development",
+      "icon": "window",
+      "title": { "ar": "تطوير الويب", "en": "Web development" },
+      "summary": {
+        "ar": "بناء مواقع وصفحات هبوط ولوحات بسيطة تعمل بسرعة على الجوال.",
+        "en": "Websites, landing pages and small dashboards that behave well on phones."
+      },
+      "bodyHtml": { "ar": "", "en": "" },
+      "deliverables": [],
+      "priceNote": { "ar": "", "en": "" },
+      "stack": [],
+      "sortOrder": 0
+    },
+    {
+      "slug": "automation",
+      "icon": "cog",
+      "title": { "ar": "أتمتة المهام", "en": "Task automation" },
+      "summary": {
+        "ar": "سكربتات وأدوات تُنجز الأعمال المتكررة: تجميع البيانات، التقارير، والمهام المجدولة.",
+        "en": "Scripts and tools for repetitive work: data collection, reports and scheduled jobs."
+      },
+      "bodyHtml": { "ar": "", "en": "" },
+      "deliverables": [],
+      "priceNote": { "ar": "", "en": "" },
+      "stack": [],
+      "sortOrder": 1
+    },
+    {
+      "slug": "desktop-apps",
+      "icon": "monitor",
+      "title": { "ar": "تطبيقات سطح مكتب (Windows)", "en": "Windows desktop applications" },
+      "summary": {
+        "ar": "تطبيقات ويندوز مستقلة تُثبَّت أو تعمل مباشرة، مع ملفات تنزيل وإصدارات.",
+        "en": "Standalone Windows applications, installable or portable, with release files."
+      },
+      "bodyHtml": { "ar": "", "en": "" },
+      "deliverables": [],
+      "priceNote": { "ar": "", "en": "" },
+      "stack": [],
+      "sortOrder": 2
+    },
+    {
+      "slug": "wordpress",
+      "icon": "layers",
+      "title": { "ar": "WordPress", "en": "WordPress" },
+      "summary": {
+        "ar": "إعداد وتخصيص مواقع WordPress وتعديل القوالب والإضافات.",
+        "en": "Setting up and customising WordPress sites, themes and plugins."
+      },
+      "bodyHtml": { "ar": "", "en": "" },
+      "deliverables": [],
+      "priceNote": { "ar": "", "en": "" },
+      "stack": [],
+      "sortOrder": 3
+    },
+    {
+      "slug": "erpnext",
+      "icon": "grid",
+      "title": { "ar": "أنظمة ERPNext", "en": "ERPNext systems" },
+      "summary": {
+        "ar": "تركيب وتخصيص وتشغيل أنظمة ERPNext وتدريب المستخدمين.",
+        "en": "Installing, customising and running ERPNext systems, plus user training."
+      },
+      "bodyHtml": { "ar": "", "en": "" },
+      "deliverables": [],
+      "priceNote": { "ar": "", "en": "" },
+      "stack": [],
+      "sortOrder": 4
+    }
+  ],
+  "projects": [],
+  "apps": [],
+  "posts": [],
+  "skills": [
+    { "name": { "ar": "Python", "en": "Python" }, "category": "backend", "level": 0, "note": { "ar": "مجال التركيز الأساسي منذ نحو خمس سنوات", "en": "Main focus for about five years" }, "sinceYear": null, "isLearning": false, "learningProgress": 0, "fromGithub": false, "sortOrder": 0 },
+    { "name": { "ar": "تطوير الويب", "en": "Web development" }, "category": "web", "level": 0, "note": { "ar": "", "en": "" }, "sinceYear": null, "isLearning": false, "learningProgress": 0, "fromGithub": false, "sortOrder": 1 },
+    { "name": { "ar": "أتمتة المهام", "en": "Task automation" }, "category": "automation", "level": 0, "note": { "ar": "", "en": "" }, "sinceYear": null, "isLearning": false, "learningProgress": 0, "fromGithub": false, "sortOrder": 2 },
+    { "name": { "ar": "تطبيقات سطح مكتب (Windows)", "en": "Windows desktop apps" }, "category": "desktop", "level": 0, "note": { "ar": "", "en": "" }, "sinceYear": null, "isLearning": false, "learningProgress": 0, "fromGithub": false, "sortOrder": 3 },
+    { "name": { "ar": "WordPress", "en": "WordPress" }, "category": "wordpress", "level": 0, "note": { "ar": "", "en": "" }, "sinceYear": null, "isLearning": false, "learningProgress": 0, "fromGithub": false, "sortOrder": 4 },
+    { "name": { "ar": "ERPNext", "en": "ERPNext" }, "category": "erp", "level": 0, "note": { "ar": "", "en": "" }, "sinceYear": null, "isLearning": false, "learningProgress": 0, "fromGithub": false, "sortOrder": 5 }
+  ],
+  "learning": [
+    {
+      "title": { "ar": "تطوير تطبيقات الموبايل", "en": "Mobile application development" },
+      "summary": { "ar": "", "en": "" },
+      "bodyHtml": { "ar": "", "en": "" },
+      "progress": 0,
+      "startedAt": null,
+      "targetAt": null,
+      "resources": [],
+      "sortOrder": 0
+    },
+    {
+      "title": { "ar": "الأمن السيبراني", "en": "Cybersecurity" },
+      "summary": { "ar": "", "en": "" },
+      "bodyHtml": { "ar": "", "en": "" },
+      "progress": 0,
+      "startedAt": null,
+      "targetAt": null,
+      "resources": [],
+      "sortOrder": 1
+    }
+  ],
+  "experience": [
+    {
+      "role": { "ar": "مطوّر برمجيات", "en": "Software developer" },
+      "organization": { "ar": "", "en": "" },
+      "location": { "ar": "", "en": "" },
+      "employmentType": "",
+      "startDate": "",
+      "endDate": "",
+      "isCurrent": false,
+      "summary": {
+        "ar": "عملت مطوّراً في شركة ناشئة. أكمل التفاصيل من لوحة التحكم.",
+        "en": "Worked as a developer in a startup. Complete the details from the control panel."
+      },
+      "highlights": [],
+      "sortOrder": 0
+    }
+  ],
+  "credentials": [
+    {
+      "kind": "education",
+      "title": { "ar": "دبلوم محاسبة", "en": "Diploma in accounting" },
+      "issuer": { "ar": "", "en": "" },
+      "issuedYear": "",
+      "note": { "ar": "", "en": "" },
+      "url": "",
+      "sortOrder": 0
+    },
+    {
+      "kind": "education",
+      "title": { "ar": "دبلوم سكرتارية", "en": "Diploma in secretarial studies" },
+      "issuer": { "ar": "", "en": "" },
+      "issuedYear": "",
+      "note": { "ar": "", "en": "" },
+      "url": "",
+      "sortOrder": 1
+    },
+    {
+      "kind": "certificate",
+      "title": {
+        "ar": "الرخصة الدولية لقيادة الحاسوب (ICDL)",
+        "en": "International Computer Driving Licence (ICDL)"
+      },
+      "issuer": { "ar": "", "en": "" },
+      "issuedYear": "",
+      "note": { "ar": "", "en": "" },
+      "url": "",
+      "sortOrder": 2
+    }
+  ],
+  "socials": [
+    {
+      "platform": "github",
+      "label": { "ar": "GitHub", "en": "GitHub" },
+      "url": "https://github.com/yswef",
+      "handle": "yswef",
+      "icon": "github",
+      "accent": "",
+      "sortOrder": 0
+    }
+  ],
+  "pages": [],
+  "languages": []
+}

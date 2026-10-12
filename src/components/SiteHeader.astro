@@ -1,0 +1,114 @@
+---
+/**
+ * Sticky header: brand, primary navigation, language switch and a compact menu
+ * for small screens. The active item is derived from the current route path.
+ */
+import { localizedPath, pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  /** Path used by the language switch when it differs from the current page. */
+  altPath?: string;
+  currentPath: string;
+}
+
+const { content, locale, currentPath, altPath = currentPath } = Astro.props;
+
+const items = [
+  { path: '', key: 'nav.home' as const },
+  { path: 'projects', key: 'nav.projects' as const },
+  { path: 'apps', key: 'nav.apps' as const },
+  { path: 'services', key: 'nav.services' as const },
+  { path: 'learning', key: 'nav.learning' as const },
+  { path: 'blog', key: 'nav.blog' as const },
+  { path: 'resume', key: 'nav.resume' as const },
+  { path: 'contact', key: 'nav.contact' as const },
+];
+
+const adminPath = 'control-panel';
+const name = pick(content.profile.name, locale);
+const initials = name
+  .split(/\s+/)
+  .slice(0, 2)
+  .map((part) => part[0] ?? '')
+  .join('');
+
+const isActive = (path: string) => {
+  if (path === '') return currentPath === '';
+  return currentPath === path || currentPath.startsWith(`${path}/`);
+};
+---
+
+<header class="site-header">
+  <div class="shell site-header__bar">
+    <a class="brand" href={localizedPath(locale, '/')} aria-label={name}>
+      <span class="brand__mark" aria-hidden="true">{initials || 'YH'}</span>
+      <span>
+        {name}
+        <span class="mono muted small" style="display:block; line-height:1">{pick(content.profile.headline, locale).slice(0, 46)}</span>
+      </span>
+    </a>
+
+    <nav class="nav" aria-label={t('nav.menu', locale)}>
+      {items.map((item) => (
+        <a href={localizedPath(locale, item.path)} aria-current={isActive(item.path) ? 'page' : undefined}>
+          {t(item.key, locale)}
+        </a>
+      ))}
+    </nav>
+
+    <div class="header-tools">
+      <div class="lang-switch" aria-label={locale === 'ar' ? 'تغيير اللغة' : 'Change language'}>
+        <a href={localizedPath('ar', altPath)} aria-current={locale === 'ar' ? 'true' : undefined} hreflang="ar" lang="ar">
+          AR
+        </a>
+        <a href={localizedPath('en', altPath)} aria-current={locale === 'en' ? 'true' : undefined} hreflang="en" lang="en">
+          EN
+        </a>
+      </div>
+
+      <button
+        class="btn btn--ghost btn--sm menu-toggle"
+        type="button"
+        aria-expanded="false"
+        aria-controls="mobile-nav"
+        data-menu-toggle
+      >
+        {t('nav.menu', locale)}
+      </button>
+    </div>
+  </div>
+
+  <div class="shell">
+    <nav class="mobile-nav" id="mobile-nav" data-open="false" aria-label={t('nav.menu', locale)}>
+      <ul>
+        {[...items, { path: 'pages', key: 'nav.pages' as const }, { path: 'social', key: 'nav.social' as const }].map(
+          (item) => (
+            <li>
+              <a href={localizedPath(locale, item.path)} aria-current={isActive(item.path) ? 'page' : undefined}>
+                {t(item.key, locale)}
+              </a>
+            </li>
+          ),
+        )}
+      </ul>
+      <p class="hint" style="margin-block-start:0.75rem">
+        <a href={`/${adminPath}/`} rel="nofollow">{t('footer.admin', locale)}</a>
+      </p>
+    </nav>
+  </div>
+</header>
+
+<script>
+  const toggle = document.querySelector('[data-menu-toggle]');
+  const panel = document.getElementById('mobile-nav');
+  if (toggle && panel) {
+    toggle.addEventListener('click', () => {
+      const open = panel.dataset.open === 'true';
+      panel.dataset.open = open ? 'false' : 'true';
+      toggle.setAttribute('aria-expanded', open ? 'false' : 'true');
+    });
+  }
+</script>

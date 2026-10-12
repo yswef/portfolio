@@ -1,0 +1,102 @@
+---
+/**
+ * Documentation block for a repository.
+ *
+ * - `readme`  → rendered by the site itself, in the site's own design
+ * - `single`  → one HTML page inside a sandboxed iframe
+ * - `multi`   → several pages with a generated sidebar, each in a sandboxed iframe
+ *
+ * The iframes carry `sandbox="allow-scripts allow-popups"` *without*
+ * `allow-same-origin`, so documents cannot reach cookies, storage or the parent
+ * page, and the served files carry a strict CSP of their own.
+ */
+import { pick, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  project: ContentSnapshot['projects'][number];
+  locale: Locale;
+  files: { path: string; title: string | null; isEntry: boolean | number }[];
+}
+
+const { project, locale, files } = Astro.props;
+const mode = project.docMode;
+
+const base = `/api/docs/${project.fullName}`;
+const entry = project.docsEntry || 'index.html';
+const htmlFiles = files.filter((file) => /\.html?$/i.test(file.path));
+const showNav = mode === 'multi' && htmlFiles.length > 1;
+
+const modeLabelKey =
+  mode === 'single'
+    ? ('label.docsMode.single' as const)
+    : mode === 'multi'
+      ? ('label.docsMode.multi' as const)
+      : mode === 'none'
+        ? ('label.docsMode.none' as const)
+        : ('label.docsMode.readme' as const);
+---
+
+<section class="section" aria-labelledby="docs-title">
+  <header class="section-head">
+    <div class="stack-sm">
+      <span class="eyebrow">{t(modeLabelKey, locale)}</span>
+      <h2 id="docs-title">{locale === 'ar' ? 'التوثيق' : 'Documentation'}</h2>
+    </div>
+    {
+      (mode === 'single' || mode === 'multi') && (
+        <a class="btn btn--ghost btn--sm" href={`${base}/${entry}`} target="_blank" rel="noopener">
+          {t('label.openStandalone', locale)}
+        </a>
+      )
+    }
+  </header>
+
+  <div class="doc-layout" data-has-nav={showNav ? 'true' : 'false'}>
+    {
+      showNav && (
+        <nav class="doc-nav" aria-label={locale === 'ar' ? 'فهرس التوثيق' : 'Documentation index'}>
+          <p class="mono small muted" style="margin-block-end:0.5rem">
+            {htmlFiles.length} {t('label.pageFiles', locale)}
+          </p>
+          <ol>
+            {htmlFiles.map((file) => (
+              <li>
+                <a href={`${base}/${file.path}`} aria-current={file.path === entry ? 'page' : undefined}>
+                  {file.title || file.path.replace(/\.html?$/i, '').replace(/-/g, ' ')}
+                </a>
+              </li>
+            ))}
+          </ol>
+        </nav>
+      )
+    }
+
+    <div class="stack-sm">
+      {
+        mode === 'readme' && (
+          <article class="panel md" set:html={project.readmeHtml || `<p class="muted">${t('label.noData', locale)}</p>`} />
+        )
+      }
+
+      {
+        (mode === 'single' || mode === 'multi') && (
+          <iframe
+            class="doc-frame"
+            src={`${base}/${entry}`}
+            sandbox="allow-scripts allow-popups allow-forms"
+            referrerpolicy="no-referrer"
+            loading="lazy"
+            title={`${pick(project.name, locale)} — ${locale === 'ar' ? 'التوثيق' : 'documentation'}`}
+          />
+        )
+      }
+
+      {
+        mode === 'none' && <p class="muted">{t('label.noData', locale)}</p>
+      }
+
+      <p class="hint">{t('label.docsSandboxNote', locale)}</p>
+    </div>
+  </div>
+</section>

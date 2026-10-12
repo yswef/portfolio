@@ -1,0 +1,100 @@
+---
+import SectionHeading from '../components/SectionHeading.astro';
+import ProjectCard from '../components/ProjectCard.astro';
+import LanguageBars from '../components/LanguageBars.astro';
+import { categoryLabel, pick, visibleProjects, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+}
+
+const { content, locale } = Astro.props;
+const all = visibleProjects(content);
+const categories = [...new Set(all.map((project) => project.category))];
+const projects = all;
+---
+
+<section class="section">
+  <div class="shell stack">
+    <SectionHeading
+      eyebrow={t('nav.projects', locale)}
+      title={t('section.projects', locale)}
+      note={t('section.projectsNote', locale)}
+      index="01"
+    />
+
+    {
+      categories.length > 1 && (
+        <nav class="tag-row" aria-label={t('label.category', locale)} data-filter-nav>
+          <button class="tag tag--plain" type="button" data-category-filter="*">
+            {locale === 'ar' ? 'الكل' : 'All'}
+          </button>
+          {categories.map((category) => (
+            <button class="tag tag--plain" type="button" data-category-filter={category}>
+              {categoryLabel(category, locale)}
+            </button>
+          ))}
+        </nav>
+      )
+    }
+
+    {
+      projects.length === 0 ? (
+        <p class="muted">{t('state.empty', locale)}</p>
+      ) : (
+        <div class="grid grid-auto" data-project-grid>
+          {projects.map((project, index) => (
+            <div data-category={project.category}>
+              <ProjectCard project={project} locale={locale} index={String(index + 1).padStart(2, '0')} />
+            </div>
+          ))}
+        </div>
+      )
+    }
+
+    {
+      content.languages.length > 0 && (
+        <div class="panel stack-sm">
+          <div class="panel-head">
+            <span>{t('section.languages', locale)}</span>
+            <span class="mono">GitHub API</span>
+          </div>
+          <LanguageBars languages={content.languages} locale={locale} />
+        </div>
+      )
+    }
+  </div>
+</section>
+
+<script>
+  // Category filtering happens in the browser so the page stays a single static
+  // document; the query string keeps a filtered view shareable.
+  const nav = document.querySelector('[data-filter-nav]');
+  const grid = document.querySelector('[data-project-grid]');
+  if (nav && grid) {
+    const buttons = Array.from(nav.querySelectorAll<HTMLButtonElement>('[data-category-filter]'));
+    const cards = Array.from(grid.children) as HTMLElement[];
+
+    const apply = (value: string, push: boolean) => {
+      for (const card of cards) {
+        card.hidden = value !== '*' && card.dataset.category !== value;
+      }
+      for (const button of buttons) {
+        button.classList.toggle('tag--accent', button.dataset.categoryFilter === value);
+      }
+      const url = new URL(window.location.href);
+      if (value === '*') url.searchParams.delete('category');
+      else url.searchParams.set('category', value);
+      if (push) history.replaceState({}, '', url.toString());
+    };
+
+    for (const button of buttons) {
+      button.addEventListener('click', () => apply(button.dataset.categoryFilter ?? '*', true));
+    }
+
+    const initial = new URLSearchParams(window.location.search).get('category');
+    apply(initial && buttons.some((button) => button.dataset.categoryFilter === initial) ? initial : '*', false);
+  }
+</script>

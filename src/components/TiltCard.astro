@@ -1,0 +1,40 @@
+---
+/**
+ * Card wrapper with a 3D tilt driven by the pointer, plus a floating layer that
+ * sits above the surface (`slot="layer"`). The tilt itself is applied by the
+ * shared pointer script; here we only provide the markup contract.
+ */
+interface Props {
+  /** Renders the card as a link when an href is given. */
+  href?: string;
+  class?: string;
+  /** Cursor label shown while hovering. */
+  cursorLabel?: string;
+  /** Adds a small index numeral in the corner. */
+  index?: string;
+  external?: boolean;
+}
+
+const { href, class: className = '', cursorLabel = '', index = '', external = false } = Astro.props;
+const Element = href ? 'a' : 'div';
+---
+
+<Element
+  class={`panel panel--interactive item-card tilt ${className}`}
+  data-tilt
+  {...href ? { href } : {}}
+  {...href && external ? { target: '_blank', rel: 'noopener' } : {}}
+  {...cursorLabel ? { 'data-cursor-label': cursorLabel } : {}}
+>
+  {
+    index && (
+      <span class="idx" style="position:absolute; inset-block-start:0.6rem; inset-inline-end:0.75rem">
+        {index}
+      </span>
+    )
+  }
+  <div class="tilt-layer stack-sm" style="block-size:100%">
+    <slot />
+  </div>
+  <slot name="layer" />
+</Element>

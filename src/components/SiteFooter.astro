@@ -1,0 +1,113 @@
+---
+/**
+ * Footer: navigation, direct contact details (only when the owner filled them
+ * in), the build stamp and the honest privacy note.
+ */
+import { formatDate, localizedPath, pick, visibleSocials, type ContentSnapshot, type Locale } from '../server/content';
+import { t } from '../i18n/ui';
+
+interface Props {
+  content: ContentSnapshot;
+  locale: Locale;
+  generatedAt?: string | null;
+}
+
+const { content, locale, generatedAt = null } = Astro.props;
+const socials = visibleSocials(content);
+const year = new Date().getFullYear();
+
+const groups = [
+  {
+    title: locale === 'ar' ? 'الموقع' : 'Site',
+    links: [
+      { path: 'projects', key: 'nav.projects' as const },
+      { path: 'apps', key: 'nav.apps' as const },
+      { path: 'services', key: 'nav.services' as const },
+      { path: 'learning', key: 'nav.learning' as const },
+    ],
+  },
+  {
+    title: locale === 'ar' ? 'معلومات' : 'Information',
+    links: [
+      { path: 'resume', key: 'nav.resume' as const },
+      { path: 'blog', key: 'nav.blog' as const },
+      { path: 'pages', key: 'nav.pages' as const },
+      { path: 'privacy', key: 'footer.privacy' as const },
+    ],
+  },
+];
+
+const contacts = [
+  content.profile.email ? { label: content.profile.email, href: `mailto:${content.profile.email}` } : null,
+  content.profile.phone ? { label: content.profile.phone, href: `tel:${content.profile.phone.replace(/\s+/g, '')}` } : null,
+  content.profile.whatsapp
+    ? { label: `WhatsApp`, href: `https://wa.me/${content.profile.whatsapp.replace(/[^0-9]/g, '')}` }
+    : null,
+].filter((entry): entry is { label: string; href: string } => entry !== null);
+---
+
+<footer class="site-footer">
+  <div class="shell">
+    <div class="site-footer__grid">
+      <div>
+        <h2>{locale === 'ar' ? 'عن الموقع' : 'About'}</h2>
+        <p class="small muted" style="max-inline-size: 34ch">
+          {pick(content.profile.availability, locale)}
+        </p>
+        <p class="small" style="margin-block-start:0.5rem">
+          <a href={localizedPath(locale, 'contact')}>{t('label.workRequest', locale)} →</a>
+        </p>
+      </div>
+
+      {groups.map((group) => (
+        <div>
+          <h2>{group.title}</h2>
+          <ul>
+            {group.links.map((link) => (
+              <li>
+                <a href={localizedPath(locale, link.path)}>{t(link.key, locale)}</a>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ))}
+
+      <div>
+        <h2>{t('label.contactDirect', locale)}</h2>
+        {contacts.length ? (
+          <ul>
+            {contacts.map((contact) => (
+              <li>
+                <a href={contact.href} class="mono">{contact.label}</a>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <p class="small muted">{t('label.noData', locale)}</p>
+        )}
+        {socials.length > 0 && (
+          <ul style="margin-block-start:0.5rem">
+            {socials.slice(0, 4).map((social) => (
+              <li>
+                <a href={social.url} rel="me noopener" target="_blank">{pick(social.label, locale)}</a>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+
+    <div class="site-footer__base">
+      <span>
+        © {year} {pick(content.profile.name, locale)} — {t('footer.rights', locale)}
+      </span>
+      <span class="mono">
+        {t('footer.builtWith', locale)}: Astro · Cloudflare Pages
+        {generatedAt ? ` · ${t('footer.updated', locale)}: ${formatDate(generatedAt, locale)}` : ''}
+      </span>
+      <span>
+        <a href={localizedPath(locale, 'privacy')}>{t('footer.privacy', locale)}</a>
+      </span>
+    </div>
+  </div>
+</footer>

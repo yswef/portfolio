@@ -1,0 +1,24 @@
+---
+import Base from '../../layouts/Base.astro';
+import ProjectsView from '../../views/ProjectsView.astro';
+import { loadContent } from '../../server/content';
+import { sectionMeta } from '../../server/page-meta';
+
+const content = loadContent();
+const meta = sectionMeta(content, 'ar', { kind: 'projects', path: 'projects' });
+
+---
+
+<Base
+  content={content}
+  locale="ar"
+  path="projects"
+  title={meta.title}
+  description={meta.description}
+  ogImage={meta.ogImage}
+  jsonLd={meta.jsonLd}
+  ogType={meta.ogType}
+  keywords={meta.keywords}
+>
+  <ProjectsView content={content} locale="ar" />
+</Base>
