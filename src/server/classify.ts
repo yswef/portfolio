@@ -52,7 +52,7 @@ export function detectCategory(repo: ClassifyInput): ProjectCategory {
 /** Which of the release files is the installer, a portable build, or checksum. */
 export function classifyAsset(fileName: string, index = 0): 'installer' | 'portable' | 'checksum' | 'source' | 'other' {
   const name = fileName.toLowerCase();
-  if (/\.(sha256|sha256sum|sha512|md5|sig|asc)$/.test(name) || name.includes('checksum')) return 'checksum';
+  if (/\.(sha256|sha256sum|sha512|md5|sig|asc)$/.test(name) || /(sha256|sha512|md5)sums?|checksums?/.test(name)) return 'checksum';
   if (name.includes('portable') || name.includes('no-install') || name.includes('standalone')) return 'portable';
   if (/\.(exe|msi|dmg|pkg|deb|rpm|appimage|apk)$/.test(name)) return 'installer';
   if (/\.(zip|7z|rar|tar|gz|tgz|xz)$/.test(name)) return index === 0 ? 'installer' : 'portable';

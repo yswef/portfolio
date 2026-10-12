@@ -851,7 +851,11 @@ export function createAdminRoutes() {
 
   /* -------------------------------------------------------------- messages */
 
-  admin.get('/messages', async (c) => messagesList(c as any, false));
+  admin.get('/messages', async (c) => {
+    const { error } = await requireUser(c);
+    if (error) return error;
+    return messagesList(c as any, false);
+  });
 
   admin.patch('/messages/:id', async (c) => {
     const { error, session, user } = await requireUser(c);
