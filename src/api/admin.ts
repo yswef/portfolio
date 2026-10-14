@@ -37,7 +37,10 @@ import {
 } from '../server/auth';
 import {
   generateTotpSecret,
+  hashPassword,
   openSealedJson,
+  sealJson,
+  timingSafeEqual,
   otpauthUrl,
   passwordProblems,
   randomBase64Url,
@@ -293,6 +296,63 @@ export function createAdminRoutes() {
       otpauthUrl: otpauthUrl({ secret, account: String(body.username), issuer }),
       recoveryCodes: codes,
     });
+  });
+
+  /* ------------------------------------------------------------ diagnostics */
+
+  /**
+   * Read-only health report for first-run problems (a 500 on login/bootstrap).
+   * Needs the BOOTSTRAP_TOKEN secret in the `x-diag-token` header, returns no
+   * secret values, only presence flags, table/column names and error messages.
+   * Run it with `npm run diagnose`.
+   */
+  admin.post('/diag', async (c) => {
+    const env = c.env as Env;
+    const provided = c.req.header('x-diag-token') ?? '';
+    if (!env.BOOTSTRAP_TOKEN || !provided || !timingSafeEqual(provided, env.BOOTSTRAP_TOKEN)) {
+      return fail(403, 'forbidden');
+    }
+    const report: Record<string, unknown> = {};
+    const step = async (name: string, fn: () => Promise<unknown>) => {
+      const started = Date.now();
+      try {
+        report[name] = { ok: true, ms: Date.now() - started, value: await fn() };
+      } catch (cause) {
+        report[name] = { ok: false, ms: Date.now() - started, error: cause instanceof Error ? cause.message : String(cause) };
+      }
+    };
+
+    report.bindings = {
+      DB: Boolean(env.DB),
+      DOCS: Boolean(env.DOCS),
+      SESSION_SECRET: Boolean(env.SESSION_SECRET),
+      BOOTSTRAP_TOKEN: Boolean(env.BOOTSTRAP_TOKEN),
+      SYNC_SECRET: Boolean(env.SYNC_SECRET),
+      SITE_URL: env.SITE_URL ?? null,
+      ADMIN_PATH: env.ADMIN_PATH ?? null,
+      DISABLE_DEFAULT_ADMIN: env.DISABLE_DEFAULT_ADMIN ?? null,
+      PBKDF2_ITERATIONS: pbkdf2Iterations(env),
+    };
+    await step('tables', async () =>
+      (await env.DB.prepare("SELECT name FROM sqlite_master WHERE type='table' ORDER BY name").all<{ name: string }>()).results.map(
+        (r) => r.name,
+      ),
+    );
+    await step('users_columns', async () =>
+      (await env.DB.prepare('PRAGMA table_info(users)').all<{ name: string }>()).results.map((r) => r.name),
+    );
+    await step('applied_migrations', async () =>
+      (await env.DB.prepare('SELECT name FROM d1_migrations ORDER BY id').all<{ name: string }>()).results.map((r) => r.name),
+    );
+    await step('users_count', async () => (await env.DB.prepare('SELECT COUNT(*) AS n FROM users').first<{ n: number }>())?.n);
+    await step('sessions_table', async () => (await env.DB.prepare('SELECT COUNT(*) AS n FROM sessions').first<{ n: number }>())?.n);
+    await step('login_attempts_table', async () =>
+      (await env.DB.prepare('SELECT COUNT(*) AS n FROM login_attempts').first<{ n: number }>())?.n,
+    );
+    await step('rate_limits_table', async () => (await env.DB.prepare('SELECT COUNT(*) AS n FROM rate_limits').first<{ n: number }>())?.n);
+    await step('pbkdf2_hash', async () => (await hashPassword('diagnostic-Probe-1!', { iterations: pbkdf2Iterations(env) })).length);
+    await step('seal_totp', async () => (await sealJson(sessionSecret(env), { secret: 'x' }, 'totp')).length);
+    return ok({ report });
   });
 
   /* --------------------------------------------------------- second factor */

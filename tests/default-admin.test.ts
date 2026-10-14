@@ -110,3 +110,24 @@ describe('default administrator', () => {
     expect(visits?.c).toBe(1);
   });
 });
+
+describe('diagnostics route', () => {
+  it('refuses without the token and reports tables with it', async () => {
+    const shim = createTestD1();
+    applyMigrations(shim.db);
+    const env = { DB: shim.db, DOCS: {}, SITE_URL: 'https://portfolio.test', BOOTSTRAP_TOKEN: 'diag-token-value-1234567890', PBKDF2_ITERATIONS: '12000' };
+    const run = (token?: string) =>
+      handleRequest({
+        request: new Request('https://portfolio.test/api/admin/diag', { method: 'POST', headers: token ? { 'x-diag-token': token } : {} }),
+        env: env as never,
+      });
+    expect((await run()).status).toBe(403);
+    expect((await run('wrong')).status).toBe(403);
+    const res = await run('diag-token-value-1234567890');
+    expect(res.status).toBe(200);
+    const body = (await res.json()) as any;
+    expect(body.report.users_columns.value).toContain('must_change_password');
+    expect(body.report.pbkdf2_hash.ok).toBe(true);
+    shim.close();
+  });
+});
