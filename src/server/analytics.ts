@@ -154,7 +154,6 @@ export async function track(env: Env, request: Request, payload: TrackPayload): 
       payload.utm?.term?.slice(0, 150) ?? null,
       payload.utm?.content?.slice(0, 150) ?? null,
       await ipDigest(env, meta),
-      0,
       now,
       now,
     )

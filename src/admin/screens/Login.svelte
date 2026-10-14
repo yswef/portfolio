@@ -26,9 +26,11 @@
     busy = true;
     error = '';
     try {
-      await api('POST', '/login', { username: username.trim(), password });
+      const result = await api<{ stage: string; csrfToken?: string }>('POST', '/login', { username: username.trim(), password });
       password = '';
-      onStage('half');
+      // No second factor enrolled: the server opens a full session straight away.
+      if (result.stage === 'full' && result.csrfToken) onSuccess({ csrfToken: result.csrfToken, username: username.trim() });
+      else onStage('half');
     } catch (cause) {
       error = errorText(cause);
     } finally {

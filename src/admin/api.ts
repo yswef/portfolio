@@ -61,6 +61,12 @@ export function errorText(error: unknown): string {
     missing_github_token: 'رمز GitHub غير مضبوط في إعدادات Cloudflare.',
     publish_failed: 'فشل النشر إلى GitHub. التفاصيل في سجل المزامنة.',
     too_large: 'المحتوى أكبر من الحد المسموح.',
+    password_change_required: 'يجب تغيير كلمة المرور الافتراضية أولاً.',
+    invalid_password: 'كلمة المرور الحالية غير صحيحة.',
+    weak_password: 'كلمة المرور ضعيفة: 12 حرفاً على الأقل مع حروف كبيرة وصغيرة ورقم ورمز، بدون كلمات شائعة (مثل admin أو password).',
+    same_password: 'كلمة المرور الجديدة يجب أن تختلف عن الحالية.',
+    invalid_username: 'اسم المستخدم: 3 إلى 40 حرفاً (أحرف إنجليزية وأرقام و . _ - فقط).',
+    username_taken: 'اسم المستخدم مستخدم من قبل.',
   };
   return known[error.code] ?? `حدث خطأ (${error.status}).`;
 }

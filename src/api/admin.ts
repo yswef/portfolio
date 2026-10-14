@@ -17,6 +17,7 @@ import {
   csrfValid,
   clearedSessionCookie,
   enrollTotp,
+  ensureDefaultAdmin,
   findUser,
   isAdminPath,
   pbkdf2Iterations,
@@ -25,8 +26,11 @@ import {
   revokeAllSessions,
   revokeSession,
   SESSION_COOKIE,
+  sessionSecret,
   setPassword,
+  setUsername,
   storePendingTotpSecret,
+  usernameProblem,
   verifySecondFactor,
   type AdminUser,
   type SessionInfo,
@@ -73,7 +77,10 @@ export function createAdminRoutes() {
   /* -------------------------------------------------------------- session */
 
   /** Guard helper used by every protected route. */
-  async function requireUser(c: any, options: { stage?: 'full' | 'half' } = {}) {
+  async function requireUser(
+    c: any,
+    options: { stage?: 'full' | 'half'; allowPendingPasswordChange?: boolean } = {},
+  ) {
     const env = c.env as Env;
     const session = await readSession(env, c.req.raw);
     if (!session) return { error: fail(401, 'unauthenticated') as Response, session: null, user: null };
@@ -83,6 +90,10 @@ export function createAdminRoutes() {
     let user: AdminUser | null = null;
     if (session.userId) user = await env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(session.userId).first<AdminUser>();
     if (!user) return { error: fail(401, 'unauthenticated') as Response, session, user: null };
+    // Default credentials: the account may only change its password and name.
+    if (user.must_change_password && !options.allowPendingPasswordChange) {
+      return { error: fail(403, 'password_change_required') as Response, session, user: null };
+    }
     return { error: null, session, user };
   }
 
@@ -107,6 +118,7 @@ export function createAdminRoutes() {
     }
     if (!body.username || !body.password) return fail(400, 'missing_credentials');
 
+    await ensureDefaultAdmin(env);
     const result = await attemptPasswordLogin(env, {
       username: String(body.username).slice(0, 120),
       password: String(body.password).slice(0, 400),
@@ -126,9 +138,26 @@ export function createAdminRoutes() {
 
     const user = result.user!;
     if (!user.totp_enabled_at || !user.totp_secret) {
-      // A user without a second factor cannot sign in: enrolment happens from
-      // the setup route below with the bootstrap secret.
-      return fail(403, 'second_factor_not_configured');
+      // No second factor enrolled (for example the default account): the password
+      // alone opens a full session. Enable 2FA from the Security screen.
+      const full = await createSession(env, { userId: user.id, stage: 'full', meta, ipHash: null });
+      await env.DB.prepare(
+        'UPDATE users SET last_login_at = unixepoch(), last_login_country = ?, updated_at = unixepoch() WHERE id = ?',
+      )
+        .bind(meta.country, user.id)
+        .run();
+      await audit(env, { userId: user.id, action: 'login.success_no2fa', entity: 'user', entityId: user.id, country: meta.country });
+      return responseWithCookies(
+        JSON.stringify({
+          ok: true,
+          stage: 'full',
+          csrfToken: full.session.csrfToken,
+          expiresAt: full.session.expiresAt,
+          mustChangePassword: Boolean(user.must_change_password),
+        }),
+        [full.cookie],
+        { headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } },
+      );
     }
 
     const { cookie, session } = await createSession(env, {
@@ -198,7 +227,7 @@ export function createAdminRoutes() {
   });
 
   admin.get('/me', async (c) => {
-    const { error, session, user } = await requireUser(c, { stage: 'half' });
+    const { error, session, user } = await requireUser(c, { stage: 'half', allowPendingPasswordChange: true });
     if (error) return error;
     return ok({
       stage: session?.stage,
@@ -209,6 +238,7 @@ export function createAdminRoutes() {
             username: user.username,
             displayName: user.display_name,
             totpEnabled: Boolean(user.totp_enabled_at),
+            mustChangePassword: Boolean(user.must_change_password),
             lastLoginAt: user.last_login_at,
             lastLoginCountry: user.last_login_country,
           }
@@ -289,7 +319,7 @@ export function createAdminRoutes() {
 
     const body = (await readJson<{ code?: string }>(c.req.raw)) ?? {};
     const pending = user.totp_secret
-      ? await openSealedJson<{ secret: string }>((c.env as Env).SESSION_SECRET ?? '', user.totp_secret, 'totp')
+      ? await openSealedJson<{ secret: string }>(sessionSecret(c.env as Env), user.totp_secret, 'totp')
       : null;
     if (!pending?.secret) return fail(400, 'start_setup_first');
 
@@ -313,7 +343,7 @@ export function createAdminRoutes() {
       return fail(401, 'invalid_password');
     }
     const stored = user.totp_secret
-      ? await openSealedJson<{ secret: string }>((c.env as Env).SESSION_SECRET ?? '', user.totp_secret, 'totp')
+      ? await openSealedJson<{ secret: string }>(sessionSecret(c.env as Env), user.totp_secret, 'totp')
       : null;
     if (stored?.secret) {
       const check = await verifyTotp(stored.secret, String(body.code ?? ''), { window: 1 });
@@ -329,22 +359,38 @@ export function createAdminRoutes() {
   });
 
   admin.post('/password', async (c) => {
-    const { error, session, user } = await requireUser(c);
+    const { error, session, user } = await requireUser(c, { allowPendingPasswordChange: true });
     if (error || !session || !user) return error ?? fail(401, 'unauthenticated');
     const csrfError = await requireCsrf(c, session);
     if (csrfError) return csrfError;
 
-    const body = (await readJson<{ currentPassword?: string; newPassword?: string }>(c.req.raw)) ?? {};
+    const body =
+      (await readJson<{ currentPassword?: string; newPassword?: string; newUsername?: string }>(c.req.raw)) ?? {};
     const { verifyPassword } = await import('../server/crypto');
     if (!body.currentPassword || !(await verifyPassword(String(body.currentPassword), user.password_hash))) {
       return fail(401, 'invalid_password');
     }
-    const problems = passwordProblems(String(body.newPassword ?? ''));
+    const newPassword = String(body.newPassword ?? '');
+    const problems = passwordProblems(newPassword);
     if (problems.length) return fail(400, 'weak_password', { problems });
+    if (newPassword === String(body.currentPassword)) return fail(400, 'same_password');
 
-    await setPassword(c.env as Env, user.id, String(body.newPassword));
+    // Optional rename (letters, digits, . _ -), checked before anything is written.
+    const newUsername = String(body.newUsername ?? '').trim();
+    const renaming = newUsername !== '' && newUsername.toLowerCase() !== user.username.toLowerCase();
+    if (newUsername !== '' && usernameProblem(newUsername)) return fail(400, 'invalid_username');
+    if (renaming && (await findUser(c.env as Env, newUsername))) return fail(409, 'username_taken');
+
+    await setPassword(c.env as Env, user.id, newPassword);
+    if (newUsername !== '' && newUsername !== user.username) await setUsername(c.env as Env, user.id, newUsername);
     await revokeAllSessions(c.env as Env, user.id);
-    await audit(c.env as Env, { userId: user.id, action: 'password.changed', entity: 'user', entityId: user.id });
+    await audit(c.env as Env, {
+      userId: user.id,
+      action: 'password.changed',
+      entity: 'user',
+      entityId: user.id,
+      meta: renaming ? { renamed: true } : undefined,
+    });
     return responseWithCookies(JSON.stringify({ ok: true, reauthenticate: true }), [clearedSessionCookie()], {
       headers: { 'content-type': 'application/json; charset=utf-8' },
     });

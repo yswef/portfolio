@@ -62,13 +62,14 @@ export interface AdminUser {
   last_login_at: number | null;
   last_login_country: string | null;
   last_login_ip_hash: string | null;
+  must_change_password: number;
 }
 
 function nowSeconds(): number {
   return Math.floor(Date.now() / 1000);
 }
 
-function sessionSecret(env: Env): string {
+export function sessionSecret(env: Env): string {
   return env.SESSION_SECRET ?? 'insecure-development-secret';
 }
 
@@ -247,9 +248,46 @@ export async function createUser(
 
 export async function setPassword(env: Env, userId: number, password: string): Promise<void> {
   const passwordHash = await hashPassword(password, { iterations: pbkdf2Iterations(env) });
-  await env.DB.prepare('UPDATE users SET password_hash = ?, password_changed_at = ?, updated_at = ? WHERE id = ?')
+  await env.DB.prepare(
+    'UPDATE users SET password_hash = ?, password_changed_at = ?, must_change_password = 0, updated_at = ? WHERE id = ?',
+  )
     .bind(passwordHash, nowSeconds(), nowSeconds(), userId)
     .run();
+}
+
+export async function setUsername(env: Env, userId: number, username: string): Promise<void> {
+  await env.DB.prepare('UPDATE users SET username = ?, updated_at = ? WHERE id = ?')
+    .bind(username.trim(), nowSeconds(), userId)
+    .run();
+}
+
+/** Letters, digits, dot, dash and underscore; 3 to 40 characters. */
+export function usernameProblem(username: string): string | null {
+  return /^[A-Za-z0-9._-]{3,40}$/.test(username.trim()) ? null : 'invalid_username';
+}
+
+export const BUILTIN_DEFAULT_USERNAME = 'admin';
+export const BUILTIN_DEFAULT_PASSWORD = 'Change@Me#2026';
+
+/**
+ * First run without a command line: while the `users` table is empty, the first
+ * login attempt creates a default administrator flagged `must_change_password`.
+ * That account has no second factor and can do nothing except change its
+ * credentials (see `requireUser` in the admin routes). Disabled with
+ * DISABLE_DEFAULT_ADMIN=1.
+ */
+export async function ensureDefaultAdmin(env: Env): Promise<void> {
+  if (env.DISABLE_DEFAULT_ADMIN === '1') return;
+  const count = await env.DB.prepare('SELECT COUNT(*) AS count FROM users').first<{ count: number }>();
+  if ((count?.count ?? 0) > 0) return;
+  const username = (env.DEFAULT_ADMIN_USERNAME ?? '').trim() || BUILTIN_DEFAULT_USERNAME;
+  const password = env.DEFAULT_ADMIN_PASSWORD || BUILTIN_DEFAULT_PASSWORD;
+  try {
+    const id = await createUser(env, { username, password });
+    await env.DB.prepare('UPDATE users SET must_change_password = 1 WHERE id = ?').bind(id).run();
+  } catch {
+    // A concurrent request created it first (unique username index): nothing to do.
+  }
 }
 
 export interface LoginResult {

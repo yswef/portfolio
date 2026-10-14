@@ -535,6 +535,8 @@ export const users = sqliteTable(
     lastLoginCountry: text('last_login_country'),
     lastLoginIpHash: text('last_login_ip_hash'),
     passwordChangedAt: integer('password_changed_at'),
+    /** 1 while the account still uses the default credentials. */
+    mustChangePassword: integer('must_change_password').notNull().default(0),
     createdAt: integer('created_at').notNull().default(now),
     updatedAt: integer('updated_at').notNull().default(now),
   },

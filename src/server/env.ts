@@ -30,6 +30,12 @@ export interface Env {
   SESSION_SECRET?: string;
   /** One-time token that allows creating the first administrator account. */
   BOOTSTRAP_TOKEN?: string;
+  /** Optional: overrides the built-in default administrator name (first run only). */
+  DEFAULT_ADMIN_USERNAME?: string;
+  /** Optional: overrides the built-in default administrator password (first run only). */
+  DEFAULT_ADMIN_PASSWORD?: string;
+  /** Set to "1" to stop the default administrator from being created automatically. */
+  DISABLE_DEFAULT_ADMIN?: string;
   /** Secret used to verify GitHub webhook deliveries. */
   GITHUB_WEBHOOK_SECRET?: string;
   /** Cloudflare Turnstile secret key for the contact form. */

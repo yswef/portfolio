@@ -3,11 +3,15 @@
 
   interface Props {
     totpEnabled: boolean;
+    forced?: boolean;
+    currentUsername?: string;
+    onPasswordChanged?: () => void;
   }
-  let { totpEnabled }: Props = $props();
+  let { totpEnabled, forced = false, currentUsername = '', onPasswordChanged }: Props = $props();
 
   let currentPassword = $state('');
   let newPassword = $state('');
+  let newUsername = $state('');
   let setup = $state<{ totpSecret: string; otpauthUrl: string } | null>(null);
   let code = $state('');
   let codes = $state<string[]>([]);
@@ -24,9 +28,10 @@
     error = '';
     notice = '';
     try {
-      await api('POST', '/password', { currentPassword, newPassword });
+      await api('POST', '/password', { currentPassword, newPassword, newUsername: newUsername.trim() });
       currentPassword = newPassword = '';
-      notice = 'تم تغيير كلمة المرور.';
+      notice = 'تم تغيير بيانات الدخول.';
+      onPasswordChanged?.();
     } catch (cause) {
       error = errorText(cause);
     }
@@ -70,21 +75,27 @@
   }
 </script>
 
-<h1 class="adm-h">الأمان</h1>
-<p class="adm-sub">كلمة المرور ورمز التحقق من التطبيق ورموز الاسترداد.</p>
+<h1 class="adm-h">{forced ? 'غيّر بيانات الدخول الافتراضية' : 'الأمان'}</h1>
+<p class="adm-sub">
+  {forced
+    ? 'الحساب يستخدم البيانات الافتراضية. اختر اسم مستخدم وكلمة مرور جديدين للمتابعة.'
+    : 'كلمة المرور ورمز التحقق من التطبيق ورموز الاسترداد.'}
+</p>
 
 {#if error}<p class="adm-error" role="alert">{error}</p>{/if}
 {#if notice}<p class="adm-ok" role="status">{notice}</p>{/if}
 
 <section class="adm-card">
-  <h2 class="adm-h" style="font-size:17px">كلمة المرور</h2>
+  <h2 class="adm-h" style="font-size:17px">كلمة المرور واسم المستخدم</h2>
   <form onsubmit={changePassword} autocomplete="off">
+    <label class="adm-field"><span>اسم المستخدم الجديد (اتركه فارغاً للإبقاء على «{currentUsername}»)</span><input class="adm-input ltr" autocomplete="username" bind:value={newUsername} maxlength="40" /></label>
     <label class="adm-field"><span>كلمة المرور الحالية</span><input class="adm-input ltr" type="password" autocomplete="current-password" bind:value={currentPassword} required /></label>
     <label class="adm-field"><span>كلمة المرور الجديدة (12 حرفاً على الأقل)</span><input class="adm-input ltr" type="password" autocomplete="new-password" bind:value={newPassword} required minlength="12" /></label>
     <button class="adm-btn primary" type="submit">تغيير</button>
   </form>
 </section>
 
+{#if !forced}
 <section class="adm-card">
   <h2 class="adm-h" style="font-size:17px">التحقق بخطوتين</h2>
   <p class="adm-sub">
@@ -120,3 +131,4 @@
     <div class="adm-codes">{#each codes as c (c)}<div>{c}</div>{/each}</div>
   {/if}
 </section>
+{/if}

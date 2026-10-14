@@ -30,6 +30,7 @@
   let stage = $state<Stage>('loading');
   let username = $state('');
   let totpEnabled = $state(true);
+  let mustChange = $state(false);
   let route = $state('dashboard');
   let contentName = $state('posts');
   let fatal = $state('');
@@ -43,9 +44,10 @@
 
   async function refresh() {
     try {
-      const me = await api<{ stage: string; csrfToken: string | null; user: { username: string; totpEnabled: boolean } | null }>('GET', '/me');
+      const me = await api<{ stage: string; csrfToken: string | null; user: { username: string; totpEnabled: boolean; mustChangePassword?: boolean } | null }>('GET', '/me');
       username = me.user?.username ?? '';
       totpEnabled = me.user?.totpEnabled ?? true;
+      mustChange = Boolean(me.user?.mustChangePassword);
       setCsrf(me.csrfToken);
       stage = me.stage === 'full' ? 'full' : me.stage === 'half' ? 'half' : 'signed-out';
     } catch {
@@ -61,11 +63,20 @@
     return () => window.removeEventListener('hashchange', readRoute);
   });
 
-  function onLoggedIn(detail: { csrfToken: string; username: string }) {
+  async function onLoggedIn(detail: { csrfToken: string; username: string }) {
     fatal = '';
     setCsrf(detail.csrfToken);
     username = detail.username;
     stage = 'full';
+    await refresh(); // totpEnabled and the forced password change flag
+  }
+
+  // The server revoked every session after a password change: sign in again.
+  function onPasswordChanged() {
+    setCsrf(null);
+    mustChange = false;
+    fatal = 'تم تغيير بيانات الدخول. سجّل الدخول بالبيانات الجديدة.';
+    stage = 'signed-out';
   }
 
   async function signOut() {
@@ -108,13 +119,17 @@
       <span class="adm-sub" style="margin:0">{username}</span>
       <button class="adm-btn small" onclick={signOut}>خروج</button>
     </header>
-    <nav class="adm-nav" aria-label="أقسام اللوحة">
-      {#each sections as s (s.id)}
-        <a href={`#/${s.id}`} aria-current={route === s.id ? 'page' : undefined}>{s.label}</a>
-      {/each}
-    </nav>
+    {#if !mustChange}
+      <nav class="adm-nav" aria-label="أقسام اللوحة">
+        {#each sections as s (s.id)}
+          <a href={`#/${s.id}`} aria-current={route === s.id ? 'page' : undefined}>{s.label}</a>
+        {/each}
+      </nav>
+    {/if}
     <main class="adm-main">
-      {#if route === 'dashboard'}
+      {#if mustChange}
+        <Security totpEnabled={false} forced={true} currentUsername={username} {onPasswordChanged} />
+      {:else if route === 'dashboard'}
         <Dashboard />
       {:else if route === 'projects'}
         <Projects />
@@ -131,7 +146,7 @@
       {:else if route === 'settings'}
         <Settings />
       {:else if route === 'security'}
-        <Security {totpEnabled} />
+        <Security {totpEnabled} currentUsername={username} {onPasswordChanged} />
       {/if}
     </main>
   </div>
